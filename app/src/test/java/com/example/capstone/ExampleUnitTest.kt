@@ -1,4 +1,4 @@
-package com.example.captstone
+package com.example.capstone
 
 import org.junit.Test
 

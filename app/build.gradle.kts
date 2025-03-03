@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.captstone"
+    namespace = "com.example.capstone"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.captstone"
+        applicationId = "com.example.capstone"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
