@@ -52,7 +52,7 @@ fun PageChange(modifier: Modifier = Modifier) {
 
         composable(route = "Kerem") {
             Kerem()
-            //kevem
+            //kevem asd
         }
 
         composable(route = "Poyraz") {
