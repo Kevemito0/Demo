@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
@@ -61,6 +62,9 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAndBottomBars() {
+
+    val navController = rememberNavController()
+
     val bottomNavItem: List<BottomNavItem> = listOf(
         BottomNavItem(
             title = "Rooms",
@@ -110,7 +114,14 @@ fun TopAndBottomBars() {
                 bottomNavItem.forEachIndexed { index, bottomNavItem ->
                     NavigationBarItem(
                         selected = selectedIndex == index,
-                        onClick = { selectedIndex = index },
+                        onClick = {
+                            selectedIndex = index
+                            when (selectedIndex) {
+                                0 -> navController.navigate("room")
+                                1 -> navController.navigate("settings")
+                                2 -> navController.navigate("profile")
+                            }
+                        },
                         icon = {
                             if (selectedIndex == index) {
                                 Icon(
@@ -131,16 +142,25 @@ fun TopAndBottomBars() {
                 }
             }
         },
-        content = {
-            when (selectedIndex) {
-                0 -> Poyraz(paddingValues = it)
-                1 -> Kerem(paddingValues = it)
-                2 -> Gaser(paddingValues = it)
+        content = { paddingValues ->
+            NavHost(navController = navController, startDestination = "room") {
+                composable("room") {
+                    RoomScreen(navController, paddingValues) // NavController parametre olarak gönderiliyor
+                }
+                composable("device") {
+                    selectedIndex = 99
+                    DeviceScreen(paddingValues)
+                }
+                composable("settings") {
+                    Kerem(paddingValues) // Settings sayfası
+                }
+                composable("profile") {
+                    Gaser(paddingValues) // Profile sayfası
+                }
             }
-        },
+        }
+
     )
-
-
 }
 
 

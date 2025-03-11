@@ -1,5 +1,6 @@
 package com.example.capstone
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,16 +20,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Poyraz(paddingValues: PaddingValues) {
-
+fun DeviceScreen(paddingValues: PaddingValues){
 
     val number = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
-
 
     LazyColumn(
         modifier = Modifier
@@ -50,7 +50,7 @@ fun Poyraz(paddingValues: PaddingValues) {
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "Item :${number}")
+                    Text(text = "Device Number: ${number}")
                 }
             }
         }
@@ -59,10 +59,11 @@ fun Poyraz(paddingValues: PaddingValues) {
 }
 
 
+
 @Preview(showBackground = true)
 @Composable
-fun Test() {
+fun DeviceScreenPreview() {
     CapstoneTheme {
-        Poyraz(paddingValues = PaddingValues())
+        DeviceScreen(paddingValues = PaddingValues())
     }
 }
