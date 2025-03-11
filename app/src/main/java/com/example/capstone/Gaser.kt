@@ -3,6 +3,7 @@ package com.example.capstone
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -14,7 +15,7 @@ import androidx.navigation.NavHostController
 
 
 @Composable
-fun Gaser() {
+fun Gaser(paddingValues: PaddingValues) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
