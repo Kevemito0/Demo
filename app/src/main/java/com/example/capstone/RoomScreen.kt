@@ -1,5 +1,6 @@
 package com.example.capstone
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,12 +20,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Poyraz(paddingValues: PaddingValues) {
+fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
 
 
     val number = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
@@ -41,7 +46,10 @@ fun Poyraz(paddingValues: PaddingValues) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .clickable {
+                        navController.navigate("device")
+                    },
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
@@ -61,8 +69,8 @@ fun Poyraz(paddingValues: PaddingValues) {
 
 @Preview(showBackground = true)
 @Composable
-fun Test() {
+fun RoomScreenPreview() {
     CapstoneTheme {
-        Poyraz(paddingValues = PaddingValues())
+        RoomScreen(paddingValues = PaddingValues(), navController = rememberNavController())
     }
 }
