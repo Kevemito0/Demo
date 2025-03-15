@@ -1,5 +1,6 @@
 package com.example.capstone
 
+import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -45,6 +46,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -152,15 +155,55 @@ fun TopAndBottomBars() {
                     DeviceScreen(paddingValues)
                 }
                 composable("settings") {
+
+                 /*   val user = hashMapOf(
+                        "first" to "Kerem",
+                        "last" to "Cakilli",
+                        "born" to 2001
+                    )
+
+// Add a new document with a generated ID
+                    db.collection("users")
+                        .add(user)
+                        .addOnSuccessListener { documentReference ->
+                            Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error adding document", e)
+                        }*/
+
                     Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {
+                    addData()
                     Gaser(paddingValues) // Profile sayfası
                 }
             }
         }
 
     )
+}
+
+
+fun addData(){
+    val db = Firebase.firestore
+
+    val user = hashMapOf(
+        "first" to "Hasan",
+        "middle" to "Furkan",
+        "last" to "Gaser",
+        "born" to 2002
+    )
+
+// Add a new document with a generated ID
+    db.collection("users")
+        .add(user)
+        .addOnSuccessListener { documentReference ->
+            Log.d(TAG, "DocumentSnapshot added with ID: ")//${documentReference.id}
+        }
+        .addOnFailureListener { e ->
+            Log.w(TAG, "Error adding document", e)
+        }
 }
 
 
