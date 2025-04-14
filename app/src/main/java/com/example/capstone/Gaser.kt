@@ -1,27 +1,20 @@
-package com.example.capstone
-
-
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,47 +26,53 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlin.random.Random
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import java.util.UUID
 
-data class User(
+
+data class FamilyMember(
     val id: String,
     val name: String,
     val email: String,
     val joinDate: String
 )
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Gaser(paddingValues: PaddingValues) {
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
-    val tabs = listOf("Davet Linkleri", "Kullanıcılar")
+    val tabs = listOf("Davet Oluştur", "Koda Katıl", "Aile Üyeleri")
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Kullanıcı Yönetimi") }
-            )
+            TopAppBar(title = { Text("Ev Güvenliği – Aile Yönetimi") })
         }
-    ) { paddingValues ->
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(innerPadding)
         ) {
             TabRow(selectedTabIndex = selectedTabIndex) {
                 tabs.forEachIndexed { index, title ->
@@ -84,7 +83,8 @@ fun Gaser(paddingValues: PaddingValues) {
                         icon = {
                             Icon(
                                 imageVector = when (index) {
-                                    0 -> Icons.Default.PersonAdd
+                                    0 -> Icons.Default.Key
+                                    1 -> Icons.Default.Person
                                     else -> Icons.Default.Person
                                 },
                                 contentDescription = title
@@ -95,218 +95,196 @@ fun Gaser(paddingValues: PaddingValues) {
             }
 
             when (selectedTabIndex) {
-                0 -> InvitationLinkScreen()
-                1 -> UserListScreen()
+                0 -> InviteGenerationScreen()
+                1 -> JoinWithInviteCodeScreen()
+                2 -> FamilyMemberListScreen()
             }
         }
     }
 }
 
+// 🔐 Kod oluşturma ekranı
 @Composable
-fun InvitationLinkScreen() {
-    var userLink by rememberSaveable { mutableStateOf<String?>(null) }
+fun InviteGenerationScreen() {
+    var inviteCode by remember { mutableStateOf<String?>(null) }
+    var isGenerating by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
-    var isGeneratingLink by remember { mutableStateOf(false) }
-    var showToast by remember { mutableStateOf(false) }
-    var toastMessage by remember { mutableStateOf("") }
-
-    // Toast mesajını göstermek için
-    if (showToast) {
-        LaunchedEffect(showToast) {
-            delay(200) // Kısa bir gecikme
-            Toast.makeText(context, toastMessage, Toast.LENGTH_SHORT).show()
-            showToast = false
-        }
-    }
+    val firestore = Firebase.firestore
+    val currentUser = FirebaseAuth.getInstance().currentUser
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.Center
     ) {
-        // Generate Link Button
         Button(
             onClick = {
-                if (!isGeneratingLink) {
-                    isGeneratingLink = true
-                    userLink = generateUserLink()
-                    toastMessage = "Link oluşturuldu!"
-                    showToast = true
-                    isGeneratingLink = false
-                }
+                isGenerating = true
+                val code = (100000..999999).random().toString()
+                inviteCode = code
+
+                val inviteData = hashMapOf(
+                    "code" to code,
+                    "createdAt" to FieldValue.serverTimestamp(),
+                    "isUsed" to false,
+                    "familyId" to "home123",
+                    "inviterId" to (currentUser?.uid ?: "unknown")
+                )
+
+                firestore.collection("invites")
+                    .add(inviteData)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Kod oluşturuldu: $code", Toast.LENGTH_SHORT).show()
+                        isGenerating = false
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Oluşturulamadı", Toast.LENGTH_SHORT).show()
+                        isGenerating = false
+                    }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isGeneratingLink
+            enabled = !isGenerating
         ) {
-            Text(text = "Davet Linki Oluştur")
+            if (isGenerating) CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
+            Text("Davet Kodu Oluştur")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        // Display Generated Link
-        userLink?.let { link ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(4.dp)
+        inviteCode?.let {
+            val clipboardManager = LocalClipboardManager.current
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(8.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = link,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    // Copy Button
-                    IconButton(
-                        onClick = {
-                            clipboardManager.setText(AnnotatedString(link))
-                            toastMessage = "Panoya kopyalandı!"
-                            showToast = true
-                        }
-                    ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Kopyala")
-                    }
+                Text("Kod: $it", style = MaterialTheme.typography.titleMedium)
+                IconButton(onClick = {
+                    clipboardManager.setText(AnnotatedString(it))
+                    Toast.makeText(context, "Kod kopyalandı", Toast.LENGTH_SHORT).show()
+                }) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Kopyala")
                 }
             }
         }
     }
 }
 
+// 🔓 Kod ile katılım ekranı
 @Composable
-fun UserListScreen() {
-    // Örnek kullanıcı listesi
-    val userList = remember {
-        mutableStateListOf(
-            User("1", "Ahmet Yılmaz", "ahmet@ornek.com", "01.03.2025"),
-            User("2", "Ayşe Demir", "ayse@ornek.com", "28.02.2025"),
-            User("3", "Mehmet Kaya", "mehmet@ornek.com", "15.02.2025"),
-            User("4", "Zeynep Şahin", "zeynep@ornek.com", "10.02.2025"),
-            User("5", "Can Öztürk", "can@ornek.com", "05.02.2025")
-        )
-    }
-
-    var searchQuery by remember { mutableStateOf("") }
+fun JoinWithInviteCodeScreen() {
+    var inputCode by remember { mutableStateOf("") }
     val context = LocalContext.current
-    var showToast by remember { mutableStateOf(false) }
-    var toastMessage by remember { mutableStateOf("") }
-
-    // Toast mesajını göstermek için
-    if (showToast) {
-        LaunchedEffect(showToast) {
-            delay(200) // Kısa bir gecikme
-            Toast.makeText(context, toastMessage, Toast.LENGTH_SHORT).show()
-            showToast = false
-        }
-    }
+    val firestore = Firebase.firestore
+    val currentUser = FirebaseAuth.getInstance().currentUser
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.Center
     ) {
-        // Arama alanı
         OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Kullanıcı Ara") },
-            singleLine = true
+            value = inputCode,
+            onValueChange = { inputCode = it },
+            label = { Text("Davet Kodu") },
+            modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Kullanıcı sayısı
-        val filteredUsers = userList.filter {
-            it.name.contains(searchQuery, ignoreCase = true) ||
-                    it.email.contains(searchQuery, ignoreCase = true)
-        }
+        Button(
+            onClick = {
+                firestore.collection("invites")
+                    .whereEqualTo("code", inputCode)
+                    .whereEqualTo("isUsed", false)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        if (!result.isEmpty) {
+                            val doc = result.documents[0]
+                            val familyId = doc.getString("familyId") ?: ""
+                            val userId = currentUser?.uid ?: ""
+                            val uuid = UUID.randomUUID().toString()
+                            val memberData = hashMapOf(
+                                "userId" to userId,
+                                "joinedAt" to FieldValue.serverTimestamp(),
+                                "role" to "member"
+                            )
+//
+//                            firestore.collection("families")
+//                                .document(familyId)
+//                                .collection("members")
+//                                .document(userId) // ✅ BU KISIM doğru
+//                                .set(memberData)
+                            val memberRef = firestore
+                                .collection("families")
+                                .document(familyId)
+                                .collection("members")
+                                .document(uuid)
 
-        Text(
-            text = "Toplam ${filteredUsers.size} kullanıcı",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+                            memberRef.set(memberData)
+                                .addOnSuccessListener {
+                                    doc.reference.update("isUsed", true)
+                                    Toast.makeText(context, "Aileye katıldınız!", Toast.LENGTH_SHORT).show()
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Hata oluştu", Toast.LENGTH_SHORT).show()
+                                }
 
-        // Kullanıcı listesi
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(
-                items = filteredUsers,
-                key = { user -> user.id } // Performans için key kullanımı
-            ) { user ->
-                UserListItem(
-                    user = user,
-                    onDelete = {
-                        userList.remove(user)
-                        toastMessage = "${user.name} silindi"
-                        showToast = true
+
+                        } else {
+                            Toast.makeText(context, "Kod geçersiz veya kullanıldı", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                )
-            }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Katıl")
         }
     }
 }
 
+// 📋 Aile üyelerini gösteren ekran (fake verilerle)
 @Composable
-fun UserListItem(user: User, onDelete: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = user.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+fun FamilyMemberListScreen() {
+    val context = LocalContext.current // ✅ Hemen fonksiyonun başında çağrıldı
+    val memberList = remember {
+        mutableStateListOf(
+            FamilyMember("1", "Ahmet Yılmaz", "ahmet@ornek.com", "01.03.2023"),
+            FamilyMember("2", "Ayşe Demir", "ayse@ornek.com", "28.02.2023"),
+            FamilyMember("3", "Mehmet Kaya", "mehmet@ornek.com", "15.02.2023")
+        )
+    }
 
-                IconButton(
-                    onClick = onDelete
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Aile Üyeleri (${memberList.size})", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn {
+            items(memberList, key = { it.id }) { member ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    elevation = CardDefaults.cardElevation(2.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Kullanıcıyı Sil",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(member.name, fontWeight = FontWeight.Bold)
+                            IconButton(onClick = {
+                                memberList.remove(member)
+                                Toast.makeText(context, "${member.name} silindi", Toast.LENGTH_SHORT).show()
+                            }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Sil")
+                            }
+                        }
+                        Text(member.email)
+                        Text("Katılım: ${member.joinDate}", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Katılım: ${user.joinDate}",
-                style = MaterialTheme.typography.bodySmall
-            )
         }
     }
 }
 
-// Function to Generate a Unique Link
-fun generateUserLink(): String {
-    val uniqueId = Random.nextInt(100000, 999999) // Generate a random 6-digit ID
-    return "https://yourapp.com/invite/$uniqueId"
+fun items(count: SnapshotStateList<FamilyMember>, key: (index: Int) -> Unit, itemContent: @Composable LazyItemScope.(index: Int) -> Unit) {
+
 }

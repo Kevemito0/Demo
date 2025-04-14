@@ -1,5 +1,6 @@
 package com.example.capstone
 
+import Gaser
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
@@ -36,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -166,7 +168,10 @@ fun TopAndBottomBars() {
                     Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {
-                    addData()
+                    FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                        Log.d("FCM", "Token: $token")
+                    }
+                    //addData()
                     Gaser(paddingValues) // Profile sayfası
                 }
             }
