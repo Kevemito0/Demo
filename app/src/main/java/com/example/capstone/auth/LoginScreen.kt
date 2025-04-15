@@ -1,16 +1,14 @@
-package com.example.capstone
+package com.example.capstone.auth
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
@@ -27,6 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.example.capstone.ui.theme.CapstoneTheme
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -36,6 +39,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import com.example.capstone.AuthScreens
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,9 +51,10 @@ var userName = ""
 @Composable
 fun Kerem(paddingValues: PaddingValues) {
 //    MainScreen(paddingValues)
-    LoginScreen(paddingValues)
+    AuthScreens(paddingValues)
 }
 
+/*
 @Composable
 fun MainScreen(paddingValues: PaddingValues) {
     var number by remember { mutableStateOf(0) }
@@ -92,7 +97,7 @@ fun MainScreen(paddingValues: PaddingValues) {
         }
     }
 }
-
+*/
 @Composable
 fun LoginScreen(paddingValues: PaddingValues) {
     var userName by remember { mutableStateOf("") }
@@ -150,10 +155,10 @@ fun LoginScreen(paddingValues: PaddingValues) {
             supportingText = {
                 Text(
                     text = "Forgot Password",
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().clickable {  },
                     textAlign = TextAlign.End,
                     textDecoration = TextDecoration.Underline,
-                    color = Color.Black
+                    color = Color.Unspecified
                 )
             },
             label = {
@@ -211,7 +216,7 @@ fun LoginScreen(paddingValues: PaddingValues) {
 @Composable
 fun KeremPreview() {
     CapstoneTheme {
-        LoginScreen(PaddingValues());
+        AuthScreens(PaddingValues());
     }
 }
 
