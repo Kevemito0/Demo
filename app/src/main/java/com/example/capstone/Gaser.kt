@@ -201,9 +201,10 @@ fun JoinWithInviteCodeScreen() {
                             val userId = currentUser?.uid ?: ""
                             val uuid = UUID.randomUUID().toString()
                             val memberData = hashMapOf(
-                                "userId" to userId,
+                                "userId" to uuid,
                                 "joinedAt" to FieldValue.serverTimestamp(),
-                                "role" to "member"
+                                "role" to "member",
+
                             )
 //
 //                            firestore.collection("families")
