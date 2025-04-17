@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Message
@@ -44,7 +45,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CapstoneTheme {
-                TopAndBottomBars()
+                val navController = rememberNavController()
+
+                NavHost(navController = navController, startDestination = "auth") {
+                    composable("auth") {
+                        AuthScreens(PaddingValues(), navController)
+                    }
+                    composable("main") {
+                        TopAndBottomBars()
+                    }
+                }
             }
         }
     }

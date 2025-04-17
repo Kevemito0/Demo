@@ -41,6 +41,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHost
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.auth.User
 import com.google.firebase.firestore.firestore
@@ -317,7 +321,7 @@ fun RegisterScreen(
 }
 
 @Composable
-fun AuthScreens(paddingValues: PaddingValues) {
+fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController) {
     var currentScreen by remember { mutableStateOf("login") }
     var showDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
@@ -350,8 +354,9 @@ fun AuthScreens(paddingValues: PaddingValues) {
                     username = username,
                     password = password,
                     onSuccess = {
-                        dialogMessage = "Login successful"
-                        showDialog = true
+                        NavController.navigate("main") {
+                            popUpTo("auth") { inclusive = true }
+                        }
                     },
                     onFailure = { errorMessage ->
                         // Show error dialog
@@ -464,5 +469,6 @@ fun loginUser(
 @Preview(showBackground = true)
 @Composable
 fun OpenAuthScreens() {
-    AuthScreens(PaddingValues())
+    val navController = rememberNavController()
+    AuthScreens(PaddingValues(), navController)
 }

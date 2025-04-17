@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.navigation.compose.rememberNavController
 import com.example.capstone.AuthScreens
 
 var userName = ""
@@ -43,7 +44,7 @@ var userName = ""
 @Composable
 fun Kerem(paddingValues: PaddingValues) {
 //    MainScreen(paddingValues)
-    AuthScreens(paddingValues)
+    KeremPreview()
 }
 
 /*
@@ -207,8 +208,9 @@ fun LoginScreen(paddingValues: PaddingValues) {
 @Preview(showBackground = true)
 @Composable
 fun KeremPreview() {
+    val navController = rememberNavController()
     CapstoneTheme {
-        AuthScreens(PaddingValues());
+        AuthScreens(PaddingValues(), navController);
     }
 }
 
