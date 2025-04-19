@@ -46,6 +46,7 @@ import androidx.navigation.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.auth.User
 import com.google.firebase.firestore.firestore
 import java.security.MessageDigest
@@ -374,50 +375,81 @@ fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController)
         "register" -> RegisterScreen(
             paddingValues = paddingValues,
             onRegisterClick = { username, email, password ->
-                registerUser(username, password, email)
-                currentScreen = "login"
+                registerUser(
+                    username = username,
+                    email = email,
+                    password = password,
+                    onSuccess = {
+                        dialogMessage = "Kayıt başarılı!"
+                        onDialogDismiss = { currentScreen = "login" }
+                        showDialog = true
+                    },
+                    onFailure = { errorMessage ->
+                        dialogMessage = errorMessage
+                        showDialog = true
+                    }
+                )
             },
-            onLoginClick = {
+
+                    onLoginClick = {
                 currentScreen = "login"
             }
         )
     }
 }
 
-fun registerUser(username: String, password: String, email: String) {
+fun registerUser(
+    username: String,
+    email: String,
+    password: String,
+    onSuccess: (String) -> Unit,
+    onFailure: (String) -> Unit
+) {
     val db = Firebase.firestore
+    val auth = FirebaseAuth.getInstance()
+    val randomFamilyId = db.collection("Families").document().id
 
-    // First check if user already exists
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (!documents.isEmpty) {
+                onFailure("Bu kullanıcı adı zaten var")
                 return@addOnSuccessListener
             }
 
-            // Hash the password (in a real app, use a proper hashing library)
-            val hashedPassword = hashPassword(password)
+            auth.createUserWithEmailAndPassword(email, password)
+                .addOnSuccessListener { authResult ->
+                    val userId = authResult.user?.uid ?: return@addOnSuccessListener
+                    val hashedPassword = hashPassword(password)
 
-            val user = hashMapOf(
-                "User Name" to username,
-                "E-Mail" to email,
-                "Password" to hashedPassword
-            )
+                    val user = hashMapOf(
+                        "User Name" to username,
+                        "E-Mail" to email,
+                        "Password" to hashedPassword,
+                        "userId" to userId,
+                        "familyId" to randomFamilyId
+                    )
 
-            db.collection("UsersTest")
-                .add(user)
-                .addOnSuccessListener { documentReference ->
-                    Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
+                    db.collection("UsersTest")
+                        .document(userId)
+                        .set(user)
+                        .addOnSuccessListener {
+                            onSuccess(userId)
+                        }
+                        .addOnFailureListener { e ->
+                            onFailure("Kullanıcı Firestore'a kaydedilemedi: ${e.message}")
+                        }
                 }
                 .addOnFailureListener { e ->
-                    Log.w(TAG, "Error adding document", e)
+                    onFailure("FirebaseAuth kaydı başarısız: ${e.message}")
                 }
         }
         .addOnFailureListener { e ->
-            Log.w(TAG, "Error checking for existing user", e)
+            onFailure("Kullanıcı adı kontrolü başarısız: ${e.message}")
         }
 }
+
 
 // Very simple password hashing function for demonstration
 // In a real app, use a proper security library

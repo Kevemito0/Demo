@@ -35,7 +35,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.capstone.auth.Kerem
 import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -176,7 +175,7 @@ fun TopAndBottomBars() {
                             Log.w(TAG, "Error adding document", e)
                         }*/
 
-                    Kerem(paddingValues) // Settings sayfası
+//                    Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {
                     FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->

@@ -117,27 +117,47 @@ fun InviteGenerationScreen() {
         verticalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = {
+            onClick = onClick@{
+                if (currentUser == null) {
+                    Toast.makeText(context, "Giriş yapılmamış!", Toast.LENGTH_SHORT).show()
+                    return@onClick
+                }
+
                 isGenerating = true
-                val code = (100000..999999).random().toString()
-                inviteCode = code
+                val userId = currentUser.uid
 
-                val inviteData = hashMapOf(
-                    "code" to code,
-                    "createdAt" to FieldValue.serverTimestamp(),
-                    "isUsed" to false,
-                    "familyId" to "home123",
-                    "inviterId" to (currentUser?.uid ?: "unknown")
-                )
+                firestore.collection("UsersTest").document(userId).get()
+                    .addOnSuccessListener { userDoc ->
+                        val familyId = userDoc.getString("familyId") ?: run {
+                            Toast.makeText(context, "Aile ID alınamadı", Toast.LENGTH_SHORT).show()
+                            isGenerating = false
+                            return@addOnSuccessListener
+                        }
 
-                firestore.collection("invites")
-                    .add(inviteData)
-                    .addOnSuccessListener {
-                        Toast.makeText(context, "Kod oluşturuldu: $code", Toast.LENGTH_SHORT).show()
-                        isGenerating = false
+                        val code = (100000..999999).random().toString()
+                        inviteCode = code
+
+                        val inviteData = hashMapOf(
+                            "code" to code,
+                            "createdAt" to FieldValue.serverTimestamp(),
+                            "isUsed" to false,
+                            "familyId" to familyId,
+                            "inviterId" to userId
+                        )
+
+                        firestore.collection("invites")
+                            .add(inviteData)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Kod oluşturuldu: $code", Toast.LENGTH_SHORT).show()
+                                isGenerating = false
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Kod oluşturulamadı", Toast.LENGTH_SHORT).show()
+                                isGenerating = false
+                            }
                     }
                     .addOnFailureListener {
-                        Toast.makeText(context, "Oluşturulamadı", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Kullanıcı verisi alınamadı", Toast.LENGTH_SHORT).show()
                         isGenerating = false
                     }
             },
@@ -168,6 +188,7 @@ fun InviteGenerationScreen() {
     }
 }
 
+
 // 🔓 Kod ile katılım ekranı
 @Composable
 fun JoinWithInviteCodeScreen() {
@@ -190,47 +211,64 @@ fun JoinWithInviteCodeScreen() {
 
         Button(
             onClick = {
+                val userId = currentUser?.uid ?: return@Button
+
+                // 1. Kod doğrulama
                 firestore.collection("invites")
                     .whereEqualTo("code", inputCode)
                     .whereEqualTo("isUsed", false)
                     .get()
                     .addOnSuccessListener { result ->
-                        if (!result.isEmpty) {
-                            val doc = result.documents[0]
-                            val familyId = doc.getString("familyId") ?: ""
-                            val userId = currentUser?.uid ?: ""
-                            val uuid = UUID.randomUUID().toString()
-                            val memberData = hashMapOf(
-                                "userId" to uuid,
-                                "joinedAt" to FieldValue.serverTimestamp(),
-                                "role" to "member",
-
-                            )
-//
-//                            firestore.collection("families")
-//                                .document(familyId)
-//                                .collection("members")
-//                                .document(userId) // ✅ BU KISIM doğru
-//                                .set(memberData)
-                            val memberRef = firestore
-                                .collection("families")
-                                .document(familyId)
-                                .collection("members")
-                                .document(uuid)
-
-                            memberRef.set(memberData)
-                                .addOnSuccessListener {
-                                    doc.reference.update("isUsed", true)
-                                    Toast.makeText(context, "Aileye katıldınız!", Toast.LENGTH_SHORT).show()
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, "Hata oluştu", Toast.LENGTH_SHORT).show()
-                                }
-
-
-                        } else {
+                        if (result.isEmpty) {
                             Toast.makeText(context, "Kod geçersiz veya kullanıldı", Toast.LENGTH_SHORT).show()
+                            return@addOnSuccessListener
                         }
+
+                        val doc = result.documents[0]
+                        val familyId = doc.getString("familyId") ?: return@addOnSuccessListener
+
+                        // 2. Kullanıcı bilgilerini al
+                        firestore.collection("UsersTest")
+                            .document(userId)
+                            .get()
+                            .addOnSuccessListener { userDoc ->
+                                val name = userDoc.getString("User Name") ?: "Bilinmeyen"
+                                val email = userDoc.getString("E-Mail") ?: "bilgi@belirsiz.com"
+
+                                // 3. Kullanıcının familyId'sini güncelle → KATILDIĞI ailenin ID'si ile
+                                firestore.collection("UsersTest").document(userId)
+                                    .update("familyId", familyId)
+                                    .addOnSuccessListener {
+                                        // 4. Aile üyelerine kullanıcıyı ekle
+                                        val memberData = hashMapOf(
+                                            "userId" to userId,
+                                            "name" to name,
+                                            "email" to email,
+                                            "joinedAt" to FieldValue.serverTimestamp(),
+                                            "role" to "member"
+                                        )
+
+                                        firestore.collection("Families")
+                                            .document(familyId)
+                                            .collection("members")
+                                            .document(userId)
+                                            .set(memberData)
+                                            .addOnSuccessListener {
+                                                // 5. Kod işaretlenir
+                                                doc.reference.update("isUsed", true)
+                                                Toast.makeText(context, "Aileye başarıyla katıldınız!", Toast.LENGTH_SHORT).show()
+                                            }
+                                            .addOnFailureListener {
+                                                Toast.makeText(context, "Aileye eklenemedi", Toast.LENGTH_SHORT).show()
+                                            }
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "FamilyID güncellenemedi", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Kod kontrol hatası", Toast.LENGTH_SHORT).show()
                     }
             },
             modifier = Modifier.fillMaxWidth()
@@ -239,6 +277,8 @@ fun JoinWithInviteCodeScreen() {
         }
     }
 }
+
+
 
 // 📋 Aile üyelerini gösteren ekran (fake verilerle)
 @Composable
