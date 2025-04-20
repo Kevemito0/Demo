@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -53,7 +54,7 @@ class MainActivity : ComponentActivity() {
                         AuthScreens(PaddingValues(), navController)
                     }
                     composable("main") {
-                        TopAndBottomBars()
+                        TopAndBottomBars(navController)
                     }
                 }
             }
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAndBottomBars() {
+fun TopAndBottomBars(outerNavController: NavHostController) {
 
     val navController = rememberNavController()
 
@@ -182,7 +183,7 @@ fun TopAndBottomBars() {
                         Log.d("FCM", "Token: $token")
                     }
                     //addData()
-                    Gaser(paddingValues) // Profile sayfası
+                    Gaser(paddingValues, outerNavController) // Profile sayfası
                 }
             }
         }
@@ -217,6 +218,7 @@ fun addData(){
 @Composable
 fun GreetingPreview() {
     CapstoneTheme {
-        TopAndBottomBars()
+        val navController = rememberNavController()
+        TopAndBottomBars(navController)
     }
 }

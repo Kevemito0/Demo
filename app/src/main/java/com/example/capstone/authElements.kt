@@ -322,7 +322,7 @@ fun RegisterScreen(
 }
 
 @Composable
-fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController) {
+fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController) {
     var currentScreen by remember { mutableStateOf("login") }
     var showDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
@@ -355,7 +355,7 @@ fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController)
                     username = username,
                     password = password,
                     onSuccess = {
-                        NavController.navigate("main") {
+                        navController.navigate("main") {
                             popUpTo("auth") { inclusive = true }
                         }
                     },
