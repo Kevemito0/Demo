@@ -50,6 +50,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.auth.User
 import com.google.firebase.firestore.firestore
 import java.security.MessageDigest
+import java.util.UUID
 
 
 @Composable
@@ -398,35 +399,30 @@ fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController)
     }
 }
 
-fun registerUser(
-    username: String,
-    email: String,
-    password: String,
-    onSuccess: (String) -> Unit,
-    onFailure: (String) -> Unit
-) {
+fun registerUser(username: String, email: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
     val db = Firebase.firestore
     val auth = FirebaseAuth.getInstance()
     val randomFamilyId = db.collection("Families").document().id
-
+    // Önce Firestore'da username var mı kontrol et
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (!documents.isEmpty) {
-                onFailure("Bu kullanıcı adı zaten var")
+                onFailure("Bu kullanıcı adı zaten alınmış.")
                 return@addOnSuccessListener
             }
 
+            // Kullanıcı adında sıkıntı yok, FirebaseAuth'a kayıt ol
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener { authResult ->
                     val userId = authResult.user?.uid ?: return@addOnSuccessListener
-                    val hashedPassword = hashPassword(password)
+
 
                     val user = hashMapOf(
                         "User Name" to username,
                         "E-Mail" to email,
-                        "Password" to hashedPassword,
+                        "Password" to hashPassword(password),
                         "userId" to userId,
                         "familyId" to randomFamilyId
                     )
@@ -435,20 +431,21 @@ fun registerUser(
                         .document(userId)
                         .set(user)
                         .addOnSuccessListener {
-                            onSuccess(userId)
+                            onSuccess()
                         }
                         .addOnFailureListener { e ->
-                            onFailure("Kullanıcı Firestore'a kaydedilemedi: ${e.message}")
+                            onFailure("Firestore kayıt hatası: ${e.message}")
                         }
                 }
                 .addOnFailureListener { e ->
-                    onFailure("FirebaseAuth kaydı başarısız: ${e.message}")
+                    onFailure("FirebaseAuth kayıt hatası: ${e.message}")
                 }
         }
         .addOnFailureListener { e ->
-            onFailure("Kullanıcı adı kontrolü başarısız: ${e.message}")
+            onFailure("Firestore kontrol hatası: ${e.message}")
         }
 }
+
 
 
 // Very simple password hashing function for demonstration
@@ -459,44 +456,37 @@ private fun hashPassword(password: String): String {
         .fold("") { str, it -> str + "%02x".format(it) }
 }
 
-fun loginUser(
-    username: String,
-    password: String,
-    onSuccess: () -> Unit,
-    onFailure: (String) -> Unit
-) {
+fun loginUser(username: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
     val db = Firebase.firestore
+    val auth = FirebaseAuth.getInstance()
 
-    // Query Firestore for documents where "User Name" matches the provided username
+    // Önce Firestore'dan username -> email bul
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (documents.isEmpty) {
-                // No user found with this username
-                onFailure("User not found")
+                onFailure("Kullanıcı bulunamadı.")
                 return@addOnSuccessListener
             }
 
-            // Since usernames should be unique, we can take the first document
             val userDoc = documents.documents[0]
-            val storedPassword = userDoc.getString("Password")
+            val email = userDoc.getString("E-Mail") ?: return@addOnSuccessListener
 
-            val hashedInputPassword = hashPassword(password)
-
-            if (storedPassword == hashedInputPassword) {
-                // Password matches, login successful
-                onSuccess()
-            } else {
-                // Password doesn't match
-                onFailure("Incorrect password")
-            }
+            // Bulunan email ile FirebaseAuth login
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnSuccessListener {
+                    onSuccess()
+                }
+                .addOnFailureListener { e ->
+                    onFailure("Giriş başarısız: ${e.message}")
+                }
         }
         .addOnFailureListener { e ->
-            Log.w(TAG, "Error during login", e)
-            onFailure("Login error: ${e.message}")
+            onFailure("Firestore'dan kullanıcı bulunamadı: ${e.message}")
         }
 }
+
 
 @Preview(showBackground = true)
 @Composable

@@ -345,14 +345,12 @@ fun FamilyMemberListScreen(navController: NavHostController) {
             .addOnSuccessListener { userDoc ->
                 val familyId = userDoc.getString("familyId") ?: return@addOnSuccessListener
 
-                // owner kontrolü
                 firestore.collection("Families").document(familyId).get()
                     .addOnSuccessListener { famDoc ->
                         val ownerId = famDoc.getString("ownerId")
                         isOwner.value = ownerId == userId
                     }
 
-                // üyeleri çek
                 firestore.collection("Families")
                     .document(familyId)
                     .collection("members")
@@ -370,22 +368,28 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                     }
             }
     }
-    Button(
-        onClick = {
-            logoutUser {
-                navController.navigate("auth") {
-                    popUpTo("login") { inclusive = true }
-                }
-            }
-        },
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-    ) {
-        Text("Çıkış Yap", color = MaterialTheme.colorScheme.onError)
-    }
 
-    Spacer(modifier = Modifier.height(16.dp))
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+
+        // 🔥 Çıkış Yap Butonu En Üste
+        Button(
+            onClick = {
+                logoutUser {
+                    navController.navigate("auth") {
+                        popUpTo("main") { inclusive = true }
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+        ) {
+            Text("Çıkış Yap", color = MaterialTheme.colorScheme.onError)
+        }
+
         Text("Aile Üyeleri (${memberList.size})", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -405,44 +409,10 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                             Text("${member.name} (${member.role})", fontWeight = FontWeight.Bold)
                             if (isOwner.value && member.role != "admin") {
                                 IconButton(onClick = {
-                                    val currentUser = FirebaseAuth.getInstance().currentUser
-                                    val firestore = Firebase.firestore
-                                    val userId = currentUser?.uid ?: return@IconButton
-
-                                    firestore.collection("UsersTest").document(userId).get()
-                                        .addOnSuccessListener { userDoc ->
-                                            val familyId = userDoc.getString("familyId") ?: return@addOnSuccessListener
-
-                                            firestore.collection("Families")
-                                                .document(familyId)
-                                                .collection("members")
-                                                .document(member.id)
-                                                .get()
-                                                .addOnSuccessListener { docSnapshot ->
-                                                    val targetRole = docSnapshot.getString("role") ?: "member"
-                                                    if (targetRole == "admin") {
-                                                        Toast.makeText(context, "Admin kullanıcı silinemez", Toast.LENGTH_SHORT).show()
-                                                        return@addOnSuccessListener
-                                                    }
-
-                                                    firestore.collection("Families")
-                                                        .document(familyId)
-                                                        .collection("members")
-                                                        .document(member.id)
-                                                        .delete()
-                                                        .addOnSuccessListener {
-                                                            memberList.remove(member)
-                                                            Toast.makeText(context, "${member.name} silindi", Toast.LENGTH_SHORT).show()
-                                                        }
-                                                        .addOnFailureListener {
-                                                            Toast.makeText(context, "Silinemedi: ${it.message}", Toast.LENGTH_SHORT).show()
-                                                        }
-                                                }
-                                        }
+                                    // Silme işlemi burada
                                 }) {
                                     Icon(Icons.Default.Delete, contentDescription = "Sil")
                                 }
-
                             }
                         }
                         Text(member.email)
@@ -453,6 +423,7 @@ fun FamilyMemberListScreen(navController: NavHostController) {
         }
     }
 }
+
 
 
 fun items(count: SnapshotStateList<FamilyMember>, key: (index: Int) -> Unit, itemContent: @Composable LazyItemScope.(index: Int) -> Unit) {}
