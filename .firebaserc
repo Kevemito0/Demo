@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "capstone-f09cc"
-  }
+    "default": "capstone-f09cc",
+    "capstone": "capstone-47161"
+  },
+  "targets": {},
+  "etags": {}
 }

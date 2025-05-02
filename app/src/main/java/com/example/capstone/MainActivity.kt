@@ -63,6 +63,13 @@ class MainActivity : ComponentActivity() {
         auth.addAuthStateListener(authStateListener)
 
         super.onCreate(savedInstanceState)
+        FirebaseMessaging.getInstance().subscribeToTopic("alerts")
+            .addOnSuccessListener {
+                Log.d("FCM", "alerts konusuna abone olundu")
+            }
+            .addOnFailureListener {
+                Log.e("FCM", "Abonelik başarısız: ${it.message}")
+            }
         enableEdgeToEdge()
 
         setContent {

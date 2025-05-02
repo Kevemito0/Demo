@@ -1,33 +1,35 @@
-
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 
 admin.initializeApp();
 
-const DEVICE_TOKEN = "e4NgV2aoT--FWE8apnr_lU:APA91bH7KyOvo6Uenu6T4HyztxwzTovyDQzfcgqPSbdzO3w3yaTAZ2huQx09RhTIeLxfap87s6SlzWkxntfzvZ4WSCliXt9UsM9bM9V4DWcbYh4RaSO3NOM";
+exports.sensorAlert = functions.firestore.onDocumentWritten(
+  {
+    document: 'sensorReadings/{docId}',
+    region: 'us-central1',
+  },
+  (event) => {
+    const before = event.data?.before?.fields;
+    const after = event.data?.after?.fields;
 
+    const type = after?.type?.stringValue;
+    const value = parseInt(after?.value?.integerValue || '0');
+    const oldValue = parseInt(before?.value?.integerValue || '0');
 
-exports.sendFireAlert = functions.database.ref("/sensor/yangin").onUpdate((change, context) => {
-  const newValue = change.after.val();
+    if (type === 'gas' && value === 1 && oldValue !== 1) {
+      const payload = {
+        notification: {
+          title: 'Gaz Kaçağı Tespit Edildi!',
+          body: 'Lütfen acil müdahale edin.',
+        },
+        data: {
+          alertType: 'gas',
+        },
+        topic: 'alerts',
+      };
+      return admin.messaging().send(payload);
+    }
 
-  if (newValue === 1) {
-    const payload = {
-      notification: {
-        title: "🚨 Yangın Uyarısı!",
-        body: "Sensör yangın algıladı!",
-        sound: "default"
-      }
-    };
-
-    return admin.messaging().sendToDevice(DEVICE_TOKEN, payload)
-      .then(response => {
-        console.log("Bildirim gönderildi:", response);
-      })
-      .catch(error => {
-        console.error("Bildirim gönderme hatası:", error);
-      });
+    return null;
   }
-
-  return null;
-});
-
+);
