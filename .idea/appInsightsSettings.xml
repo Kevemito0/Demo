@@ -10,9 +10,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.example.capstone" />
-                  <option name="mobileSdkAppId" value="1:235616107919:android:0fcd6e30a1d393446cdffa" />
-                  <option name="projectId" value="capstone-f09cc" />
-                  <option name="projectNumber" value="235616107919" />
+                  <option name="mobileSdkAppId" value="1:400236050229:android:f2f50277e42fd47bfe7e7c" />
+                  <option name="projectId" value="capstone-47161" />
+                  <option name="projectNumber" value="400236050229" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

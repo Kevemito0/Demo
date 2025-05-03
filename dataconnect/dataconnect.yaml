@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "Capstone"
+location: "europe-central2"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "postgres"
+      cloudSql:
+        instanceId: "alerts-function"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
