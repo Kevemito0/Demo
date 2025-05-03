@@ -22,16 +22,20 @@ exports.sensorAlert = functions.firestore.onDocumentUpdated(
     console.log('✅ sensorAlert tetiklendi:', { type, value });
 
     if (type === 'gas' && value === 1) {
-      const payload = {
-        notification: {
-          title: 'Gaz Kaçağı Tespit Edildi!',
-          body: 'Lütfen acil müdahale edin.',
-        },
-        data: {
-          alertType: 'gas',
-        },
-        topic: 'alerts',
-      };
+     const payload = {
+       notification: {
+         title: 'Gaz Kaçağı Tespit Edildi!',
+         body: 'Lütfen acil müdahale edin.',
+       },
+       android: {
+         priority: 'high'
+       },
+       data: {
+         alertType: 'gas',
+       },
+       topic: 'alerts',
+     };
+
       console.log('📣 Bildirim gönderiliyor:', payload);
       return admin.messaging().send(payload);
     }
