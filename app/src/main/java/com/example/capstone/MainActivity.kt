@@ -210,23 +210,8 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                     DeviceScreen(paddingValues)
                 }
                 composable("settings") {
-
-                 /*   val user = hashMapOf(
-                        "first" to "Kerem",
-                        "last" to "Cakilli",
-                        "born" to 2001
-                    )
-
-// Add a new document with a generated ID
-                    db.collection("users")
-                        .add(user)
-                        .addOnSuccessListener { documentReference ->
-                            Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.w(TAG, "Error adding document", e)
-                        }*/
-
+                    SettingsScreen(paddingValues,
+                        outerNavController)
 //                    Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {

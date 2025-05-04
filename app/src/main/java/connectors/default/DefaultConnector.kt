@@ -23,7 +23,7 @@ public interface DefaultConnector : com.google.firebase.dataconnect.generated.Ge
     @Suppress("MemberVisibilityCanBePrivate")
     public val config: com.google.firebase.dataconnect.ConnectorConfig = com.google.firebase.dataconnect.ConnectorConfig(
       connector = "default",
-      location = "europe-central2",
+      location = "us-central1",
       serviceId = "Capstone",
     )
 
