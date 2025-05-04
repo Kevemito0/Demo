@@ -1,73 +1,49 @@
 // functions/index.js
 const admin = require('firebase-admin');
 const { setGlobalOptions } = require('firebase-functions');
-const {
-  onValueWritten,
-  onValueUpdated
-} = require('firebase-functions/v2/database');
+const { onValueWritten, onValueUpdated } = require('firebase-functions/v2/database');
 const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 
-admin.initializeApp();
+// 1️⃣ Ensure all your functions default to us-central1
 setGlobalOptions({ region: 'us-central1' });
 
-/**
- * 1️⃣ RealtimeDB’deki /sensors yoluna gelen verilerden
- * sadece uyarı koşulları sağlandığında Firestore’a yaz:
- *   • temperature > 50
- *   • motion === true
- *   • gas === 1
- */
+// 2️⃣ Init the Admin SDK
+admin.initializeApp();
+
+// 3️⃣ Sync Realtime Database → Firestore
 exports.syncSensorData = onValueWritten(
   { ref: '/sensors' },
   async (event) => {
-    const snap = event.data.after;
-    if (!snap.exists) {
-      console.log('🚫 Veri yok, atlanıyor.');
+    // In v2 RTDB triggers, event.data.after is a DataSnapshot
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) {
+      console.log('🚫 No data, skipping.');
       return null;
     }
-    const data = snap.toJSON();
-    const temp   = Number(data.temperature);
-    const motion = Boolean(data.motion);
-    const gas    = Number(data.gas);
+    const data = afterSnap.toJSON();
+    console.log('🔄 syncSensorData:', data);
 
-    const kosul =
-      temp   > 50    ||
-      motion === true||
-      gas    === 1;
-
-    if (!kosul) {
-      console.log('🔕 Uyarı koşulu yok:', { temp, motion, gas });
-      return null;
-    }
-
-    const doc = {
-      temperature: temp,
-      motion:      motion,
-      gas:         gas,
-      timestamp:   admin.firestore.FieldValue.serverTimestamp(),
-      notified:    false  // ileride bildirim gönderince true yapacağız
-    };
-    console.log('📤 Firestore’a alert yazılıyor:', doc);
+    // Write into Firestore
     return admin.firestore()
-      .collection('sensorAlerts')
-      .add(doc);
+      .collection('sensorReadings')
+      .add({
+        type: data.type ?? null,
+        value: data.value ?? null,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
   }
 );
 
-/**
- * 2️⃣ Firestore’a yazılan her yeni sensorAlerts dökümanına
- * (örneğin gaz kaçağı olduğunda) bildirim gönder ve
- * doc.notified alanını true olarak güncelle
- */
+// 4️⃣ Firestore update → send FCM if gas value flips to 1
 exports.sensorAlert = onDocumentUpdated(
-  { document: 'sensorAlerts/{alertId}' },
+  { document: 'sensorReadings/{docId}' },
   async (event) => {
     const before = event.data.before.data();
     const after  = event.data.after.data();
-    console.log('🔄 sensorAlertNotification:', before, '→', after);
+    console.log('sensorAlert before→after:', before, after);
 
-    // Gaz kaçağı: gas===1 ve henüz bildirim yollanmamışsa
-    if (after.gas === 1 && before.notified === false) {
+    // Only fire when it becomes gas===1
+    if (after.type === 'gas' && after.value === 1 && before.value !== 1) {
       const payload = {
         notification: {
           title: 'Gaz Kaçağı Tespit Edildi!',
@@ -76,30 +52,22 @@ exports.sensorAlert = onDocumentUpdated(
         data: { alertType: 'gas' },
         topic: 'alerts',
       };
-      console.log('📣 Gaz kaçağı bildirimi gönderiliyor');
-      await admin.messaging().send(payload);
-      // notified bayrağını güncelle
-      return admin.firestore()
-        .collection('sensorAlerts')
-        .doc(event.data.after.id)
-        .update({ notified: true });
+      console.log('📣 Sending notification', payload);
+      return admin.messaging().send(payload);
     }
 
-    console.log('🔕 Bildirim koşulu sağlanmadı.');
+    console.log('🔕 No alert conditions met.');
     return null;
   }
 );
 
-/**
- * 3️⃣ RealtimeDB’de /alarms/highTemperature yolundaki değişikliklere
- * bak, true olduktan sonra bildirim gönder
- */
+// 5️⃣ (Optional) React to a specific RTDB flag under /alarms/highTemperature
 exports.highTempAlert = onValueUpdated(
   { ref: '/alarms/highTemperature' },
   async (event) => {
     const before = event.data.before.toJSON();
     const after  = event.data.after.toJSON();
-    console.log('🌡️ highTempAlert before→after:', before, after);
+    console.log('highTempAlert before→after:', before, after);
 
     if (after === true && before !== true) {
       const payload = {
@@ -110,11 +78,9 @@ exports.highTempAlert = onValueUpdated(
         data: { alertType: 'highTemperature' },
         topic: 'alerts',
       };
-      console.log('🔥 Yüksek sıcaklık bildirimi gönderiliyor');
+      console.log('🔥 Sending high-temp notification');
       return admin.messaging().send(payload);
     }
-
-    console.log('🔕 Yüksek sıcaklık koşulu yok.');
     return null;
   }
 );
