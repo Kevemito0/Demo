@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -35,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.capstone.ui.theme.CapstoneTesting
 import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
@@ -105,8 +107,8 @@ fun TopAndBottomBars() {
                 Text(text = "HOMSEC")
             },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(R.color.topBarColor),
-                    titleContentColor = androidx.compose.ui.graphics.Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 actions = {
                     IconButton(onClick = {
