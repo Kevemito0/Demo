@@ -205,10 +205,14 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                         paddingValues
                     ) // NavController parametre olarak gönderiliyor
                 }
-                composable("device") {
-                    selectedIndex = 99
-                    DeviceScreen(paddingValues)
+                composable("device/{roomName}") { backStackEntry ->
+                    val roomName = backStackEntry.arguments?.getString("roomName") ?: ""
+                    DeviceScreen(paddingValues = paddingValues,roomName, navController = navController)
                 }
+//                composable("device") {
+//                    selectedIndex = 99
+//                    DeviceScreen(paddingValues)
+//                }
                 composable("settings") {
                     SettingsScreen(paddingValues,
                         outerNavController)
