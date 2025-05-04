@@ -26,52 +26,97 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            CapstoneTheme {
-                val navController = rememberNavController()
+    private lateinit var auth: FirebaseAuth
+    private lateinit var authStateListener: FirebaseAuth.AuthStateListener
 
-                NavHost(navController = navController, startDestination = "auth") {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        auth = FirebaseAuth.getInstance()
+
+        authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            if (user != null) {
+                Log.d("AuthListener", "Kullanıcı giriş yaptı: ${user.uid}")
+                // Kullanıcı giriş yaptı, burada ek bir işlem yapabiliriz.
+            } else {
+                Log.d("AuthListener", "Kullanıcı çıkış yaptı!")
+                // Kullanıcı çıkış yaptıysa direkt auth ekranına git
+            }
+        }
+        auth.addAuthStateListener(authStateListener)
+
+        super.onCreate(savedInstanceState)
+        FirebaseMessaging.getInstance().subscribeToTopic("alerts")
+            .addOnSuccessListener {
+                Log.d("FCM", "alerts konusuna abone olundu")
+            }
+            .addOnFailureListener {
+                Log.e("FCM", "Abonelik başarısız: ${it.message}")
+            }
+        enableEdgeToEdge()
+
+        setContent {
+            val navController = rememberNavController()
+
+            LaunchedEffect(Unit) {
+                auth.addAuthStateListener { firebaseAuth ->
+                    val user = firebaseAuth.currentUser
+                    if (user != null) {
+                        if (navController.currentDestination?.route != "main") {
+                            navController.navigate("main") {
+                                popUpTo("auth") { inclusive = true }
+                            }
+                        }
+                    } else {
+                        if (navController.currentDestination?.route != "auth") {
+                            navController.navigate("auth") {
+                                popUpTo("main") { inclusive = true }
+                            }
+                        }
+                    }
+                }
+            }
+            CapstoneTheme {
+                val startDestination = if (auth.currentUser != null) "main" else "auth"
+                NavHost(navController = navController, startDestination = startDestination) {
                     composable("auth") {
                         AuthScreens(PaddingValues(), navController)
                     }
                     composable("main") {
-                        TopAndBottomBars()
+                        TopAndBottomBars(navController)
                     }
-                    composable("room") {
-                        RoomScreen(navController = navController, paddingValues = PaddingValues())
-                    }
-                    /*composable("device/{roomName}") { backStackEntry ->
-                        val roomName = backStackEntry.arguments?.getString("roomName") ?: ""
-                        DeviceScreen(paddingValues = paddingValues,roomName, navController = navController)
-                    }*/
                 }
             }
         }
     }
+    override fun onDestroy() {
+        super.onDestroy()
+        auth.removeAuthStateListener(authStateListener)
+    }
+
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAndBottomBars() {
+fun TopAndBottomBars(outerNavController: NavHostController) {
 
     val navController = rememberNavController()
 
@@ -160,34 +205,13 @@ fun TopAndBottomBars() {
                         paddingValues
                     ) // NavController parametre olarak gönderiliyor
                 }
-               /* composable("device") {
+                composable("device") {
                     selectedIndex = 99
                     DeviceScreen(paddingValues)
-                }*/
-
-                composable("device/{roomName}") { backStackEntry ->
-                    val roomName = backStackEntry.arguments?.getString("roomName") ?: ""
-                    DeviceScreen(paddingValues = paddingValues,roomName, navController = navController)
                 }
-
                 composable("settings") {
-
-                 /*   val user = hashMapOf(
-                        "first" to "Kerem",
-                        "last" to "Cakilli",
-                        "born" to 2001
-                    )
-
-// Add a new document with a generated ID
-                    db.collection("users")
-                        .add(user)
-                        .addOnSuccessListener { documentReference ->
-                            Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.w(TAG, "Error adding document", e)
-                        }*/
-
+                    SettingsScreen(paddingValues,
+                        outerNavController)
 //                    Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {
@@ -195,7 +219,7 @@ fun TopAndBottomBars() {
                         Log.d("FCM", "Token: $token")
                     }
                     //addData()
-                    Gaser(paddingValues) // Profile sayfası
+                    Gaser(paddingValues, outerNavController) // Profile sayfası
                 }
             }
         }
@@ -230,6 +254,7 @@ fun addData(){
 @Composable
 fun GreetingPreview() {
     CapstoneTheme {
-        TopAndBottomBars()
+        val navController = rememberNavController()
+        TopAndBottomBars(navController)
     }
 }

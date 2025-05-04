@@ -266,20 +266,16 @@ fun RegisterScreen(
         PasswordField(
             password = password,
             label = label,
-            onPasswordChange = { password = it },
             passwordVisible = passwordVisible,
             onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
-            onDone = { /* Focus on confirm password */ }
         )
 
-        // Confirm password field
         PasswordField(
             password = confirmPassword,
             label = "Confirm your password",
             onPasswordChange = { confirmPassword = it },
             passwordVisible = confirmPasswordVisible,
             onPasswordVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
-            onDone = { onRegisterClick(userName, email, password) },
             supportingText = {
                 if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
                     Text(
@@ -322,7 +318,6 @@ fun RegisterScreen(
 }
 
 @Composable
-fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController) {
     var currentScreen by remember { mutableStateOf("login") }
     var showDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
@@ -355,7 +350,6 @@ fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController)
                     username = username,
                     password = password,
                     onSuccess = {
-                        NavController.navigate("main") {
                             popUpTo("auth") { inclusive = true }
                         }
                     },
@@ -398,35 +392,24 @@ fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController)
     }
 }
 
-fun registerUser(
-    username: String,
-    email: String,
-    password: String,
-    onSuccess: (String) -> Unit,
-    onFailure: (String) -> Unit
-) {
     val db = Firebase.firestore
     val auth = FirebaseAuth.getInstance()
     val randomFamilyId = db.collection("Families").document().id
-
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (!documents.isEmpty) {
-                onFailure("Bu kullanıcı adı zaten var")
                 return@addOnSuccessListener
             }
 
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener { authResult ->
                     val userId = authResult.user?.uid ?: return@addOnSuccessListener
-                    val hashedPassword = hashPassword(password)
 
                     val user = hashMapOf(
                         "User Name" to username,
                         "E-Mail" to email,
-                        "Password" to hashedPassword,
                         "userId" to userId,
                         "familyId" to randomFamilyId
                     )
@@ -435,18 +418,14 @@ fun registerUser(
                         .document(userId)
                         .set(user)
                         .addOnSuccessListener {
-                            onSuccess(userId)
                         }
                         .addOnFailureListener { e ->
-                            onFailure("Kullanıcı Firestore'a kaydedilemedi: ${e.message}")
                         }
                 }
                 .addOnFailureListener { e ->
-                    onFailure("FirebaseAuth kaydı başarısız: ${e.message}")
                 }
         }
         .addOnFailureListener { e ->
-            onFailure("Kullanıcı adı kontrolü başarısız: ${e.message}")
         }
 }
 
@@ -459,42 +438,22 @@ private fun hashPassword(password: String): String {
         .fold("") { str, it -> str + "%02x".format(it) }
 }
 
-fun loginUser(
-    username: String,
-    password: String,
-    onSuccess: () -> Unit,
-    onFailure: (String) -> Unit
-) {
     val db = Firebase.firestore
 
-    // Query Firestore for documents where "User Name" matches the provided username
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (documents.isEmpty) {
-                // No user found with this username
-                onFailure("User not found")
                 return@addOnSuccessListener
             }
 
-            // Since usernames should be unique, we can take the first document
             val userDoc = documents.documents[0]
-            val storedPassword = userDoc.getString("Password")
 
-            val hashedInputPassword = hashPassword(password)
-
-            if (storedPassword == hashedInputPassword) {
-                // Password matches, login successful
                 onSuccess()
-            } else {
-                // Password doesn't match
-                onFailure("Incorrect password")
             }
         }
         .addOnFailureListener { e ->
-            Log.w(TAG, "Error during login", e)
-            onFailure("Login error: ${e.message}")
         }
 }
 
