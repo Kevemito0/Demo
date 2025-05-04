@@ -50,7 +50,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.auth.User
 import com.google.firebase.firestore.firestore
 import java.security.MessageDigest
-import java.util.UUID
 
 
 @Composable
@@ -219,17 +218,7 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
     val label = "Password"
-
-    fun validatePassword() {
-        if (password.isNotEmpty()) {
-            val (isSecure, message) = checkPasswordSecurity(password)
-            passwordError = if (!isSecure) message else null
-        } else {
-            passwordError = null
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -277,37 +266,20 @@ fun RegisterScreen(
         PasswordField(
             password = password,
             label = label,
-            onPasswordChange = {
-                password = it
-                validatePassword()
-            },
+            onPasswordChange = { password = it },
             passwordVisible = passwordVisible,
             onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
-            onDone = { /* Focus on confirm password */ },
-            supportingText = {
-                passwordError?.let {
-                    Text(
-                        text = it,
-                        color = Color.Red,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start
-                    )
-                }
-            }
+            onDone = { /* Focus on confirm password */ }
         )
 
-        // Confirm password field (with matching check)
+        // Confirm password field
         PasswordField(
             password = confirmPassword,
             label = "Confirm your password",
             onPasswordChange = { confirmPassword = it },
             passwordVisible = confirmPasswordVisible,
             onPasswordVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
-            onDone = {
-                if (password == confirmPassword && passwordError == null) {
-                    onRegisterClick(userName, email, password)
-                }
-            },
+            onDone = { onRegisterClick(userName, email, password) },
             supportingText = {
                 if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
                     Text(
@@ -350,7 +322,7 @@ fun RegisterScreen(
 }
 
 @Composable
-fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController) {
+fun AuthScreens(paddingValues: PaddingValues, NavController : NavHostController) {
     var currentScreen by remember { mutableStateOf("login") }
     var showDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
@@ -383,7 +355,7 @@ fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController)
                     username = username,
                     password = password,
                     onSuccess = {
-                        navController.navigate("main") {
+                        NavController.navigate("main") {
                             popUpTo("auth") { inclusive = true }
                         }
                     },
@@ -426,30 +398,35 @@ fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController)
     }
 }
 
-fun registerUser(username: String, email: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+fun registerUser(
+    username: String,
+    email: String,
+    password: String,
+    onSuccess: (String) -> Unit,
+    onFailure: (String) -> Unit
+) {
     val db = Firebase.firestore
     val auth = FirebaseAuth.getInstance()
     val randomFamilyId = db.collection("Families").document().id
-    // Önce Firestore'da username var mı kontrol et
+
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (!documents.isEmpty) {
-                onFailure("Bu kullanıcı adı zaten alınmış.")
+                onFailure("Bu kullanıcı adı zaten var")
                 return@addOnSuccessListener
             }
 
-            // Kullanıcı adında sıkıntı yok, FirebaseAuth'a kayıt ol
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener { authResult ->
                     val userId = authResult.user?.uid ?: return@addOnSuccessListener
-
+                    val hashedPassword = hashPassword(password)
 
                     val user = hashMapOf(
                         "User Name" to username,
                         "E-Mail" to email,
-                        "Password" to hashPassword(password),
+                        "Password" to hashedPassword,
                         "userId" to userId,
                         "familyId" to randomFamilyId
                     )
@@ -458,21 +435,20 @@ fun registerUser(username: String, email: String, password: String, onSuccess: (
                         .document(userId)
                         .set(user)
                         .addOnSuccessListener {
-                            onSuccess()
+                            onSuccess(userId)
                         }
                         .addOnFailureListener { e ->
-                            onFailure("Firestore kayıt hatası: ${e.message}")
+                            onFailure("Kullanıcı Firestore'a kaydedilemedi: ${e.message}")
                         }
                 }
                 .addOnFailureListener { e ->
-                    onFailure("FirebaseAuth kayıt hatası: ${e.message}")
+                    onFailure("FirebaseAuth kaydı başarısız: ${e.message}")
                 }
         }
         .addOnFailureListener { e ->
-            onFailure("Firestore kontrol hatası: ${e.message}")
+            onFailure("Kullanıcı adı kontrolü başarısız: ${e.message}")
         }
 }
-
 
 
 // Very simple password hashing function for demonstration
@@ -483,88 +459,44 @@ private fun hashPassword(password: String): String {
         .fold("") { str, it -> str + "%02x".format(it) }
 }
 
-fun loginUser(username: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+fun loginUser(
+    username: String,
+    password: String,
+    onSuccess: () -> Unit,
+    onFailure: (String) -> Unit
+) {
     val db = Firebase.firestore
-    val auth = FirebaseAuth.getInstance()
 
-    // Önce Firestore'dan username -> email bul
+    // Query Firestore for documents where "User Name" matches the provided username
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (documents.isEmpty) {
-                onFailure("Kullanıcı bulunamadı.")
+                // No user found with this username
+                onFailure("User not found")
                 return@addOnSuccessListener
             }
 
+            // Since usernames should be unique, we can take the first document
             val userDoc = documents.documents[0]
-            val email = userDoc.getString("E-Mail") ?: return@addOnSuccessListener
+            val storedPassword = userDoc.getString("Password")
 
-            // Bulunan email ile FirebaseAuth login
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnSuccessListener {
-                    onSuccess()
-                }
-                .addOnFailureListener { e ->
-                    onFailure("Giriş başarısız: ${e.message}")
-                }
+            val hashedInputPassword = hashPassword(password)
+
+            if (storedPassword == hashedInputPassword) {
+                // Password matches, login successful
+                onSuccess()
+            } else {
+                // Password doesn't match
+                onFailure("Incorrect password")
+            }
         }
         .addOnFailureListener { e ->
-            onFailure("Firestore'dan kullanıcı bulunamadı: ${e.message}")
+            Log.w(TAG, "Error during login", e)
+            onFailure("Login error: ${e.message}")
         }
 }
-
-fun checkPasswordSecurity(password: String): Pair<Boolean, String> {
-    // Check minimum length
-    if (password.length < 8) {
-        return Pair(false, "Şifre en az 8 karakter olmalıdır.")
-    }
-
-    // Check for uppercase letters
-    if (!password.any { it.isUpperCase() }) {
-        return Pair(false, "Şifre en az bir büyük harf içermelidir.")
-    }
-
-    // Check for lowercase letters
-    if (!password.any { it.isLowerCase() }) {
-        return Pair(false, "Şifre en az bir küçük harf içermelidir.")
-    }
-
-    // Check for digits
-    if (!password.any { it.isDigit() }) {
-        return Pair(false, "Şifre en az bir rakam içermelidir.")
-    }
-
-    // Check for special characters
-    val specialChars = "!@#$%^&*()_-+=<>?/[]{}|."
-    if (!password.any { specialChars.contains(it) }) {
-        return Pair(false, "Şifre en az bir özel karakter içermelidir (örn: !@#$%^&*()_-+=<>?/[]{}|).")
-    }
-
-    // Check for common passwords (simplified example - in real app, use a more extensive list)
-    val commonPasswords = listOf("password", "123456", "qwerty", "admin", "welcome", "password123")
-    if (commonPasswords.contains(password.lowercase())) {
-        return Pair(false, "Bu şifre çok yaygın ve kolayca tahmin edilebilir.")
-    }
-
-    // Check for repeated characters
-    val repeatedChars = password.groupBy { it }.filter { it.value.size > 3 }
-    if (repeatedChars.isNotEmpty()) {
-        return Pair(false, "Şifre çok fazla tekrar eden karakter içeriyor.")
-    }
-
-    // Check for sequential characters
-    val sequences = listOf("abcdef", "123456", "qwerty")
-    for (seq in sequences) {
-        if (seq.windowedSequence(3).any { window -> password.lowercase().contains(window) }) {
-            return Pair(false, "Şifre sıralı karakterler içeriyor.")
-        }
-    }
-
-    // If all checks pass, return success
-    return Pair(true, "Güçlü şifre!")
-}
-
 
 @Preview(showBackground = true)
 @Composable
