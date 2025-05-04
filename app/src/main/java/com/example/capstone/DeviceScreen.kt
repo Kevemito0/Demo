@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +50,10 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
 
     var familyId by remember { mutableStateOf<String?>(null) }
     var devices by remember { mutableStateOf<List<String>>(emptyList()) }
+    var selectedDevice by remember { mutableStateOf<String?>(null) }
+
+
+
 
     LaunchedEffect(Unit) {
         user?.uid?.let { uid ->
@@ -86,18 +93,25 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(start = 24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start
+                        .padding(start = 24.dp, end = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         text = device,
                         modifier = Modifier.padding(16.dp),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
+                    )
+
+                    var isChecked by remember { mutableStateOf(true) }
+
+                    Switch(
+                        checked = isChecked,
+                        onCheckedChange = { isChecked = it }
                     )
                 }
             }
