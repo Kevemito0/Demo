@@ -277,37 +277,16 @@ fun RegisterScreen(
         PasswordField(
             password = password,
             label = label,
-            onPasswordChange = {
-                password = it
-                validatePassword()
-            },
             passwordVisible = passwordVisible,
             onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
-            onDone = { /* Focus on confirm password */ },
-            supportingText = {
-                passwordError?.let {
-                    Text(
-                        text = it,
-                        color = Color.Red,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start
-                    )
-                }
-            }
         )
 
-        // Confirm password field (with matching check)
         PasswordField(
             password = confirmPassword,
             label = "Confirm your password",
             onPasswordChange = { confirmPassword = it },
             passwordVisible = confirmPasswordVisible,
             onPasswordVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
-            onDone = {
-                if (password == confirmPassword && passwordError == null) {
-                    onRegisterClick(userName, email, password)
-                }
-            },
             supportingText = {
                 if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
                     Text(
@@ -350,7 +329,6 @@ fun RegisterScreen(
 }
 
 @Composable
-fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController) {
     var currentScreen by remember { mutableStateOf("login") }
     var showDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
@@ -383,7 +361,6 @@ fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController)
                     username = username,
                     password = password,
                     onSuccess = {
-                        navController.navigate("main") {
                             popUpTo("auth") { inclusive = true }
                         }
                     },
@@ -426,17 +403,14 @@ fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController)
     }
 }
 
-fun registerUser(username: String, email: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
     val db = Firebase.firestore
     val auth = FirebaseAuth.getInstance()
     val randomFamilyId = db.collection("Families").document().id
-    // Önce Firestore'da username var mı kontrol et
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (!documents.isEmpty) {
-                onFailure("Bu kullanıcı adı zaten alınmış.")
                 return@addOnSuccessListener
             }
 
@@ -449,7 +423,6 @@ fun registerUser(username: String, email: String, password: String, onSuccess: (
                     val user = hashMapOf(
                         "User Name" to username,
                         "E-Mail" to email,
-                        "Password" to hashPassword(password),
                         "userId" to userId,
                         "familyId" to randomFamilyId
                     )
@@ -458,18 +431,14 @@ fun registerUser(username: String, email: String, password: String, onSuccess: (
                         .document(userId)
                         .set(user)
                         .addOnSuccessListener {
-                            onSuccess()
                         }
                         .addOnFailureListener { e ->
-                            onFailure("Firestore kayıt hatası: ${e.message}")
                         }
                 }
                 .addOnFailureListener { e ->
-                    onFailure("FirebaseAuth kayıt hatası: ${e.message}")
                 }
         }
         .addOnFailureListener { e ->
-            onFailure("Firestore kontrol hatası: ${e.message}")
         }
 }
 
@@ -483,88 +452,24 @@ private fun hashPassword(password: String): String {
         .fold("") { str, it -> str + "%02x".format(it) }
 }
 
-fun loginUser(username: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
     val db = Firebase.firestore
     val auth = FirebaseAuth.getInstance()
 
-    // Önce Firestore'dan username -> email bul
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
         .addOnSuccessListener { documents ->
             if (documents.isEmpty) {
-                onFailure("Kullanıcı bulunamadı.")
                 return@addOnSuccessListener
             }
 
             val userDoc = documents.documents[0]
-            val email = userDoc.getString("E-Mail") ?: return@addOnSuccessListener
 
-            // Bulunan email ile FirebaseAuth login
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnSuccessListener {
                     onSuccess()
                 }
                 .addOnFailureListener { e ->
-                    onFailure("Giriş başarısız: ${e.message}")
-                }
+    }
         }
-        .addOnFailureListener { e ->
-            onFailure("Firestore'dan kullanıcı bulunamadı: ${e.message}")
-        }
-}
-
-fun checkPasswordSecurity(password: String): Pair<Boolean, String> {
-    // Check minimum length
-    if (password.length < 8) {
-        return Pair(false, "Şifre en az 8 karakter olmalıdır.")
-    }
-
-    // Check for uppercase letters
-    if (!password.any { it.isUpperCase() }) {
-        return Pair(false, "Şifre en az bir büyük harf içermelidir.")
-    }
-
-    // Check for lowercase letters
-    if (!password.any { it.isLowerCase() }) {
-        return Pair(false, "Şifre en az bir küçük harf içermelidir.")
-    }
-
-    // Check for digits
-    if (!password.any { it.isDigit() }) {
-        return Pair(false, "Şifre en az bir rakam içermelidir.")
-    }
-
-    // Check for special characters
-    val specialChars = "!@#$%^&*()_-+=<>?/[]{}|."
-    if (!password.any { specialChars.contains(it) }) {
-        return Pair(false, "Şifre en az bir özel karakter içermelidir (örn: !@#$%^&*()_-+=<>?/[]{}|).")
-    }
-
-    // Check for common passwords (simplified example - in real app, use a more extensive list)
-    val commonPasswords = listOf("password", "123456", "qwerty", "admin", "welcome", "password123")
-    if (commonPasswords.contains(password.lowercase())) {
-        return Pair(false, "Bu şifre çok yaygın ve kolayca tahmin edilebilir.")
-    }
-
-    // Check for repeated characters
-    val repeatedChars = password.groupBy { it }.filter { it.value.size > 3 }
-    if (repeatedChars.isNotEmpty()) {
-        return Pair(false, "Şifre çok fazla tekrar eden karakter içeriyor.")
-    }
-
-    // Check for sequential characters
-    val sequences = listOf("abcdef", "123456", "qwerty")
-    for (seq in sequences) {
-        if (seq.windowedSequence(3).any { window -> password.lowercase().contains(window) }) {
-            return Pair(false, "Şifre sıralı karakterler içeriyor.")
-        }
-    }
-
-    // If all checks pass, return success
-    return Pair(true, "Güçlü şifre!")
-}
-
 
 @Preview(showBackground = true)
 @Composable
