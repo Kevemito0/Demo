@@ -53,7 +53,6 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
     var rooms by remember { mutableStateOf<List<RoomItem>>(emptyList()) }
 
 
-
     // Firestore'dan familyId'yi al
     LaunchedEffect(Unit) {
         userId?.let {
@@ -99,19 +98,23 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                     .height(100.dp)
                     .padding(16.dp)
                     .clickable {
-                        navController.navigate("device")
+                        navController.navigate("device/${room.name}")
                     },
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(start = 24.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 24.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Text (text = room.name,
+                    Text(
+                        text = room.name,
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold)
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -126,7 +129,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
             ) {
                 Button(
                     onClick = {
-                        navController.navigate("device")
+                        navController.navigate("device/Livingroom")
                         Log.d("RoomScreen", "Artı Butonuna tıklandı")
                     },
                     shape = RoundedCornerShape(50),

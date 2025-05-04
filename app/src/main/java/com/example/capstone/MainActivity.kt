@@ -55,6 +55,13 @@ class MainActivity : ComponentActivity() {
                     composable("main") {
                         TopAndBottomBars()
                     }
+                    composable("room") {
+                        RoomScreen(navController = navController, paddingValues = PaddingValues())
+                    }
+                    /*composable("device/{roomName}") { backStackEntry ->
+                        val roomName = backStackEntry.arguments?.getString("roomName") ?: ""
+                        DeviceScreen(paddingValues = paddingValues,roomName, navController = navController)
+                    }*/
                 }
             }
         }
@@ -153,10 +160,16 @@ fun TopAndBottomBars() {
                         paddingValues
                     ) // NavController parametre olarak gönderiliyor
                 }
-                composable("device") {
+               /* composable("device") {
                     selectedIndex = 99
                     DeviceScreen(paddingValues)
+                }*/
+
+                composable("device/{roomName}") { backStackEntry ->
+                    val roomName = backStackEntry.arguments?.getString("roomName") ?: ""
+                    DeviceScreen(paddingValues = paddingValues,roomName, navController = navController)
                 }
+
                 composable("settings") {
 
                  /*   val user = hashMapOf(
