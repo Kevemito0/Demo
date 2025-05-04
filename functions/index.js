@@ -1,45 +1,33 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 
 admin.initializeApp();
 
-exports.sensorAlert = functions.firestore.onDocumentUpdated(
-  {
-    document: 'sensorReadings/{docId}',
-    region: 'us-central1',
-  },
-  (event) => {
-    const newData = event.data.after.data?.();
+const DEVICE_TOKEN = "e4NgV2aoT--FWE8apnr_lU:APA91bH7KyOvo6Uenu6T4HyztxwzTovyDQzfcgqPSbdzO3w3yaTAZ2huQx09RhTIeLxfap87s6SlzWkxntfzvZ4WSCliXt9UsM9bM9V4DWcbYh4RaSO3NOM";
 
-    if (!newData || !newData.type || newData.value === undefined) {
-      console.log('❌ Veri eksik, işlem yapılmadı.');
-      return null;
-    }
 
-    const type = newData.type;
-    const value = parseInt(newData.value);
+exports.sendFireAlert = functions.database.ref("/sensor/yangin").onUpdate((change, context) => {
+  const newValue = change.after.val();
 
-    console.log('✅ sensorAlert tetiklendi:', { type, value });
+  if (newValue === 1) {
+    const payload = {
+      notification: {
+        title: "🚨 Yangın Uyarısı!",
+        body: "Sensör yangın algıladı!",
+        sound: "default"
+      }
+    };
 
-    if (type === 'gas' && value === 1) {
-     const payload = {
-       notification: {
-         title: 'Gaz Kaçağı Tespit Edildi!',
-         body: 'Lütfen acil müdahale edin.',
-       },
-       android: {
-         priority: 'high'
-       },
-       data: {
-         alertType: 'gas',
-       },
-       topic: 'alerts',
-     };
-
-      console.log('📣 Bildirim gönderiliyor:', payload);
-      return admin.messaging().send(payload);
-    }
-
-    return null;
+    return admin.messaging().sendToDevice(DEVICE_TOKEN, payload)
+      .then(response => {
+        console.log("Bildirim gönderildi:", response);
+      })
+      .catch(error => {
+        console.error("Bildirim gönderme hatası:", error);
+      });
   }
-);
+
+  return null;
+});
+

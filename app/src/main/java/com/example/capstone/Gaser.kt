@@ -44,13 +44,10 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
 import java.util.UUID
 
 
@@ -58,63 +55,20 @@ data class FamilyMember(
     val id: String,
     val name: String,
     val email: String,
-    val joinDate: String,
-    val role: String
+    val joinDate: String
 )
-
-
-fun logoutUser(onLoggedOut: () -> Unit) {
-    FirebaseAuth.getInstance().signOut()
-    onLoggedOut()
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
+fun Gaser(paddingValues: PaddingValues) {
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
-
     val tabs = listOf("Davet Oluştur", "Koda Katıl", "Aile Üyeleri")
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Ev Güvenliği – Aile Yönetimi") },
-                actions = {
-                    IconButton(onClick = { showLogoutDialog = true }) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Çıkış Yap")
-                    }
-                }
-            )
+            TopAppBar(title = { Text("Ev Güvenliği – Aile Yönetimi") })
         }
     ) { innerPadding ->
-
-        if (showLogoutDialog) {
-            AlertDialog(
-                onDismissRequest = { showLogoutDialog = false },
-                title = { Text("Çıkış Yap") },
-                text = { Text("Hesabınızdan çıkış yapmak istediğinize emin misiniz?") },
-                confirmButton = {
-                    Button(onClick = {
-                        showLogoutDialog = false
-                        logoutUser {
-                            navController.navigate("auth") {
-                                popUpTo("main") { inclusive = true } // ❗️"login" değil → dıştaki root hedef olmalı
-                            }
-                        }
-
-                    }) {
-                        Text("Evet")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("İptal")
-                    }
-                }
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -143,99 +97,69 @@ fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
             when (selectedTabIndex) {
                 0 -> InviteGenerationScreen()
                 1 -> JoinWithInviteCodeScreen()
-                2 -> FamilyMemberListScreen(navController)
+                2 -> FamilyMemberListScreen()
             }
         }
     }
 }
 
-
+// 🔐 Kod oluşturma ekranı
 @Composable
 fun InviteGenerationScreen() {
+    var inviteCode by remember { mutableStateOf<String?>(null) }
+    var isGenerating by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val firestore = Firebase.firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    var inviteCode by remember { mutableStateOf<String?>(null) }
-    var isGenerating by remember { mutableStateOf(false) }
-
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = {
+            onClick = onClick@{
                 if (currentUser == null) {
                     Toast.makeText(context, "Giriş yapılmamış!", Toast.LENGTH_SHORT).show()
-                } else {
-                    isGenerating = true
-                    val userId = currentUser.uid
-
-                    firestore.collection("UsersTest").document(userId).get()
-                        .addOnSuccessListener { userDoc ->
-                            val familyId = userDoc.getString("familyId")
-                                ?: run {
-                                    Toast.makeText(context, "Aile ID alınamadı", Toast.LENGTH_SHORT).show()
-                                    isGenerating = false
-                                    return@addOnSuccessListener
-                                }
-
-                            // Aile dokümanı yoksa oluştur ve owner'ı ekle
-                            val familyRef = firestore.collection("Families").document(familyId)
-                            familyRef.get().addOnSuccessListener { famDoc ->
-                                if (!famDoc.exists()) {
-                                    val familyData = hashMapOf(
-                                        "ownerId" to userId,
-                                        "createdAt" to FieldValue.serverTimestamp()
-                                    )
-                                    familyRef.set(familyData)
-                                }
-                                // Owner'ı members altına admin olarak ekle
-                                val ownerMemberRef = familyRef.collection("members").document(userId)
-                                ownerMemberRef.get().addOnSuccessListener { snap ->
-                                    if (!snap.exists()) {
-                                        val name = userDoc.getString("User Name") ?: "Bilinmeyen"
-                                        val email = userDoc.getString("E-Mail") ?: "-"
-                                        val adminData = hashMapOf(
-                                            "userId" to userId,
-                                            "name" to name,
-                                            "email" to email,
-                                            "joinedAt" to FieldValue.serverTimestamp(),
-                                            "role" to "admin"
-                                        )
-                                        ownerMemberRef.set(adminData)
-                                    }
-                                }
-
-                                // Davet kodunu oluştur ve kaydet
-                                val code = (100000..999999).random().toString()
-                                inviteCode = code
-                                val inviteData = hashMapOf(
-                                    "code" to code,
-                                    "createdAt" to FieldValue.serverTimestamp(),
-                                    "isUsed" to false,
-                                    "familyId" to familyId,
-                                    "inviterId" to userId
-                                )
-                                firestore.collection("invites")
-                                    .add(inviteData)
-                                    .addOnSuccessListener {
-                                        Toast.makeText(context, "Kod oluşturuldu: $code", Toast.LENGTH_SHORT).show()
-                                        isGenerating = false
-                                    }
-                                    .addOnFailureListener {
-                                        Toast.makeText(context, "Kod oluşturulamadı", Toast.LENGTH_SHORT).show()
-                                        isGenerating = false
-                                    }
-                            }
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Kullanıcı verisi alınamadı", Toast.LENGTH_SHORT).show()
-                            isGenerating = false
-                        }
+                    return@onClick
                 }
+
+                isGenerating = true
+                val userId = currentUser.uid
+
+                firestore.collection("UsersTest").document(userId).get()
+                    .addOnSuccessListener { userDoc ->
+                        val familyId = userDoc.getString("familyId") ?: run {
+                            Toast.makeText(context, "Aile ID alınamadı", Toast.LENGTH_SHORT).show()
+                            isGenerating = false
+                            return@addOnSuccessListener
+                        }
+
+                        val code = (100000..999999).random().toString()
+                        inviteCode = code
+
+                        val inviteData = hashMapOf(
+                            "code" to code,
+                            "createdAt" to FieldValue.serverTimestamp(),
+                            "isUsed" to false,
+                            "familyId" to familyId,
+                            "inviterId" to userId
+                        )
+
+                        firestore.collection("invites")
+                            .add(inviteData)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Kod oluşturuldu: $code", Toast.LENGTH_SHORT).show()
+                                isGenerating = false
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Kod oluşturulamadı", Toast.LENGTH_SHORT).show()
+                                isGenerating = false
+                            }
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Kullanıcı verisi alınamadı", Toast.LENGTH_SHORT).show()
+                        isGenerating = false
+                    }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isGenerating
@@ -245,19 +169,16 @@ fun InviteGenerationScreen() {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        inviteCode?.let { code ->
-            val clipboard = LocalClipboardManager.current
+        inviteCode?.let {
+            val clipboardManager = LocalClipboardManager.current
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(8.dp)
             ) {
-                Text("Kod: $code", style = MaterialTheme.typography.titleMedium)
+                Text("Kod: $it", style = MaterialTheme.typography.titleMedium)
                 IconButton(onClick = {
-                    clipboard.setText(AnnotatedString(code))
+                    clipboardManager.setText(AnnotatedString(it))
                     Toast.makeText(context, "Kod kopyalandı", Toast.LENGTH_SHORT).show()
                 }) {
                     Icon(Icons.Default.ContentCopy, contentDescription = "Kopyala")
@@ -268,7 +189,7 @@ fun InviteGenerationScreen() {
 }
 
 
-
+// 🔓 Kod ile katılım ekranı
 @Composable
 fun JoinWithInviteCodeScreen() {
     var inputCode by remember { mutableStateOf("") }
@@ -292,6 +213,7 @@ fun JoinWithInviteCodeScreen() {
             onClick = {
                 val userId = currentUser?.uid ?: return@Button
 
+                // 1. Kod doğrulama
                 firestore.collection("invites")
                     .whereEqualTo("code", inputCode)
                     .whereEqualTo("isUsed", false)
@@ -305,6 +227,7 @@ fun JoinWithInviteCodeScreen() {
                         val doc = result.documents[0]
                         val familyId = doc.getString("familyId") ?: return@addOnSuccessListener
 
+                        // 2. Kullanıcı bilgilerini al
                         firestore.collection("UsersTest")
                             .document(userId)
                             .get()
@@ -312,9 +235,11 @@ fun JoinWithInviteCodeScreen() {
                                 val name = userDoc.getString("User Name") ?: "Bilinmeyen"
                                 val email = userDoc.getString("E-Mail") ?: "bilgi@belirsiz.com"
 
+                                // 3. Kullanıcının familyId'sini güncelle → KATILDIĞI ailenin ID'si ile
                                 firestore.collection("UsersTest").document(userId)
                                     .update("familyId", familyId)
                                     .addOnSuccessListener {
+                                        // 4. Aile üyelerine kullanıcıyı ekle
                                         val memberData = hashMapOf(
                                             "userId" to userId,
                                             "name" to name,
@@ -329,6 +254,7 @@ fun JoinWithInviteCodeScreen() {
                                             .document(userId)
                                             .set(memberData)
                                             .addOnSuccessListener {
+                                                // 5. Kod işaretlenir
                                                 doc.reference.update("isUsed", true)
                                                 Toast.makeText(context, "Aileye başarıyla katıldınız!", Toast.LENGTH_SHORT).show()
                                             }
@@ -352,101 +278,21 @@ fun JoinWithInviteCodeScreen() {
     }
 }
 
+
+
+// 📋 Aile üyelerini gösteren ekran (fake verilerle)
 @Composable
-fun FamilyMemberListScreen(navController: NavHostController) {
-    val context = LocalContext.current
-    val firestore = Firebase.firestore
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    val memberList = remember { mutableStateListOf<FamilyMember>() }
-    val isOwner = remember { mutableStateOf(false) }
-
-    var familyName by remember { mutableStateOf("") }
-    var newFamilyName by remember { mutableStateOf("") }
-    var familyId by remember { mutableStateOf("") }
-
-    LaunchedEffect(Unit) {
-        val userId = currentUser?.uid ?: return@LaunchedEffect
-
-        firestore.collection("UsersTest").document(userId).get()
-            .addOnSuccessListener { userDoc ->
-                val famId = userDoc.getString("familyId") ?: return@addOnSuccessListener
-                familyId = famId
-
-                // Owner kontrolü ve familyName çek
-                firestore.collection("Families").document(famId).get()
-                    .addOnSuccessListener { famDoc ->
-                        val ownerId = famDoc.getString("ownerId")
-                        isOwner.value = ownerId == userId
-                        familyName = famDoc.getString("familyName") ?: ""
-                        newFamilyName = familyName
-                    }
-
-                // Üyeleri çek
-                firestore.collection("Families")
-                    .document(famId)
-                    .collection("members")
-                    .get()
-                    .addOnSuccessListener { result ->
-                        memberList.clear()
-                        for (doc in result.documents) {
-                            val id = doc.getString("userId") ?: continue
-                            val name = doc.getString("name") ?: "Bilinmeyen"
-                            val email = doc.getString("email") ?: "-"
-                            val joined = doc.getTimestamp("joinedAt")?.toDate()?.toString() ?: "-"
-                            val role = doc.getString("role") ?: "member"
-                            memberList.add(FamilyMember(id, name, email, joined, role))
-                        }
-                    }
-            }
+fun FamilyMemberListScreen() {
+    val context = LocalContext.current // ✅ Hemen fonksiyonun başında çağrıldı
+    val memberList = remember {
+        mutableStateListOf(
+            FamilyMember("1", "Ahmet Yılmaz", "ahmet@ornek.com", "01.03.2023"),
+            FamilyMember("2", "Ayşe Demir", "ayse@ornek.com", "28.02.2023"),
+            FamilyMember("3", "Mehmet Kaya", "mehmet@ornek.com", "15.02.2023")
+        )
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Çıkış Yap Butonu
-        Button(
-            onClick = {
-                logoutUser {
-                    navController.navigate("auth") {
-                        popUpTo("main") { inclusive = true }
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-        ) {
-            Text("Çıkış Yap", color = MaterialTheme.colorScheme.onError)
-        }
-
-        // Family Name Alanı (sadece owner)
-        if (isOwner.value) {
-            OutlinedTextField(
-                value = newFamilyName,
-                onValueChange = { newFamilyName = it },
-                label = { Text("Aile İsmi") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Button(
-                onClick = {
-                    firestore.collection("Families").document(familyId)
-                        .update("familyName", newFamilyName)
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Aile ismi güncellendi", Toast.LENGTH_SHORT).show()
-                            familyName = newFamilyName
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Hata: ${it.message}", Toast.LENGTH_SHORT).show()
-                        }
-                },
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                Text("Aile İsmini Güncelle")
-            }
-        } else {
-            Text("Aile: $familyName", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
         Text("Aile Üyeleri (${memberList.size})", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -463,24 +309,12 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("${member.name} (${member.role})", fontWeight = FontWeight.Bold)
-                            if (isOwner.value && member.role != "admin") {
-                                IconButton(onClick = {
-                                    firestore.collection("Families")
-                                        .document(familyId)
-                                        .collection("members")
-                                        .document(member.id)
-                                        .delete()
-                                        .addOnSuccessListener {
-                                            memberList.remove(member)
-                                            Toast.makeText(context, "${member.name} silindi", Toast.LENGTH_SHORT).show()
-                                        }
-                                        .addOnFailureListener {
-                                            Toast.makeText(context, "Silinemedi: ${it.message}", Toast.LENGTH_SHORT).show()
-                                        }
-                                }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Sil")
-                                }
+                            Text(member.name, fontWeight = FontWeight.Bold)
+                            IconButton(onClick = {
+                                memberList.remove(member)
+                                Toast.makeText(context, "${member.name} silindi", Toast.LENGTH_SHORT).show()
+                            }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Sil")
                             }
                         }
                         Text(member.email)
@@ -492,8 +326,6 @@ fun FamilyMemberListScreen(navController: NavHostController) {
     }
 }
 
+fun items(count: SnapshotStateList<FamilyMember>, key: (index: Int) -> Unit, itemContent: @Composable LazyItemScope.(index: Int) -> Unit) {
 
-
-
-fun items(count: SnapshotStateList<FamilyMember>, key: (index: Int) -> Unit, itemContent: @Composable LazyItemScope.(index: Int) -> Unit) {}
-
+}
