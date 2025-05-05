@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "400236050229",
+    "firebase_url": "https://capstone-47161-default-rtdb.firebaseio.com",
+    "project_id": "capstone-47161",
+    "storage_bucket": "capstone-47161.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:400236050229:android:f2f50277e42fd47bfe7e7c",
+        "android_client_info": {
+          "package_name": "com.example.capstone"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfmUfk4tAlIdMZ7B8bhKGF5793H_Rsw7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

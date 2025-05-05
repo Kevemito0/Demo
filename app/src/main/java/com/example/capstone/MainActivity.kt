@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     override fun onDestroy() {
         super.onDestroy()
         auth.removeAuthStateListener(authStateListener)
@@ -156,6 +157,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                 actions = {
                     IconButton(onClick = {
                         Log.d("Message", "Clicked")
+                        navController.navigate("alertScreen")
                     }) {
                         Icon(imageVector = Icons.Filled.Message, contentDescription = "")
                     }
@@ -207,16 +209,21 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                 }
                 composable("device/{roomName}") { backStackEntry ->
                     val roomName = backStackEntry.arguments?.getString("roomName") ?: ""
-                    DeviceScreen(paddingValues = paddingValues,roomName, navController = navController)
+                    DeviceScreen(
+                        paddingValues = paddingValues,
+                        roomName = roomName,
+                        navController = navController
+                    )
                 }
-//                composable("device") {
-//                    selectedIndex = 99
-//                    DeviceScreen(paddingValues)
-//                }
+//
+                composable("alertScreen") {
+                    AlertsScreen(paddingValues, navController)
+                }
                 composable("settings") {
-                    SettingsScreen(paddingValues,
-                        outerNavController)
-//                    Kerem(paddingValues) // Settings sayfası
+                    SettingsScreen(
+                        paddingValues,
+                        outerNavController
+                    )
                 }
                 composable("profile") {
                     FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
@@ -232,7 +239,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
 }
 
 
-fun addData(){
+fun addData() {
     val db = Firebase.firestore
 
     val user = hashMapOf(

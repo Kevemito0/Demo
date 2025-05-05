@@ -1,6 +1,7 @@
 package com.example.capstone
 
 import android.util.Log
+import android.webkit.WebSettings.TextSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -78,12 +79,35 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
                 }
         }
     }
-
+    /*Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        Text(
+            text = roomName,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(paddingValues)
+        )
+    }
+*/
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
+
+        item{
+            Text(
+                text = roomName,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(24.dp)
+            )
+        }
+
         items(devices) { device ->
             Card(
                 modifier = Modifier
