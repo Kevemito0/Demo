@@ -1,6 +1,5 @@
 package com.example.capstone
 
-import Gaser
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log

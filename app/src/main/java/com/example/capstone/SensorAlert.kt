@@ -1,7 +1,7 @@
 package com.example.capstone
 
 class SensorAlert (
-    val gas: Int,
+    val gas: Boolean,
     val motion: Boolean,
     val temperature: Int,
     val timestamp: String,

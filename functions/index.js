@@ -20,33 +20,54 @@ setGlobalOptions({ region: 'us-central1' });
 exports.syncSensorData = onValueWritten(
   { ref: '/sensors' },
   async (event) => {
-    const snap = event.data.after;
-    if (!snap.exists) {
-      console.log('🚫 Veri yok, atlanıyor.');
+    // önceki ve yeni snapshot
+    const beforeSnap = event.data.before;
+    const afterSnap  = event.data.after;
+
+    const before = beforeSnap.exists() ? beforeSnap.val() : {};
+    const after  = afterSnap.exists()  ? afterSnap.val()  : {};
+
+    // değerleri al
+    const prevTemp     = Number(before.temperature  || 0);
+    const temp         = Number(after.temperature   || 0);
+
+    const prevMotion   = Boolean(before.motion);
+    const motion       = Boolean(after.motion);
+
+    const prevGas      = before.gas         || false;
+    const gas          = after.gas          || false;
+
+    const prevDoorLock = Boolean(before.doorLock);
+    const doorLock     = Boolean(after.doorLock);
+
+    // tetikleme koşulları
+    const tempTriggered     = prevTemp < 50   && temp >= 50;
+    const motionTriggered   = !prevMotion      && motion;
+    const gasTriggered      = prevGas !== true    && gas === true;
+    const doorLockTriggered = !prevDoorLock    && doorLock;
+
+    // hiçbir sensör tetiklenmediyse çık
+    if (!(tempTriggered || motionTriggered || gasTriggered || doorLockTriggered)) {
+      console.log('🔕 Uyarı koşulu yok:', { temp, motion, gas, doorLock });
       return null;
     }
-    const data = snap.toJSON();
-    const temp   = Number(data.temperature);
-    const motion = Boolean(data.motion);
-    const gas    = Number(data.gas);
 
-    const kosul =
-      temp   > 50    ||
-      motion === true||
-      gas    === 1;
-
-    if (!kosul) {
-      console.log('🔕 Uyarı koşulu yok:', { temp, motion, gas });
-      return null;
-    }
-
+    // Firestore belgesi
     const doc = {
-      temperature: temp,
-      motion:      motion,
-      gas:         gas,
-      timestamp:   admin.firestore.FieldValue.serverTimestamp(),
-      notified:    false  // ileride bildirim gönderince true yapacağız
+      temperature:  temp,
+      motion:       motion,
+      gas:          gas,
+      doorLock:     doorLock,
+      triggered: {
+        temperature: tempTriggered,
+        motion:      motionTriggered,
+        gas:         gasTriggered,
+        doorLock:    doorLockTriggered
+      },
+      timestamp:    admin.firestore.FieldValue.serverTimestamp(),
+
     };
+
     console.log('📤 Firestore’a alert yazılıyor:', doc);
     return admin.firestore()
       .collection('sensorAlerts')
@@ -59,37 +80,31 @@ exports.syncSensorData = onValueWritten(
  * (örneğin gaz kaçağı olduğunda) bildirim gönder ve
  * doc.notified alanını true olarak güncelle
  */
-exports.sensorAlert = onDocumentUpdated(
-  { document: 'sensorAlerts/{alertId}' },
+exports.gasAlert = onValueUpdated(
+  { ref: '/sensors/gas' },
   async (event) => {
-    const before = event.data.before.data();
-    const after  = event.data.after.data();
-    console.log('🔄 sensorAlertNotification:', before, '→', after);
+    const before = event.data.before.toJSON();
+    const after  = event.data.after.toJSON();
+    console.log('💧 gasAlert before→after:', before, '→', after);
 
-    // Gaz kaçağı: gas===1 ve henüz bildirim yollanmamışsa
-    if (after.gas === 1 && before.notified === false) {
+    // Gaz sensörü 0→1 geçişi
+    if (after === true && before !== true) {
       const payload = {
         notification: {
-          title: 'Gaz Kaçağı Tespit Edildi!',
-          body:  'Lütfen acil müdahale edin.',
+          title: '🚨 Gaz Kaçağı Tespit Edildi!',
+          body:  'Gaz seviyesi kritik: lütfen hemen kontrol edin.',
         },
         data: { alertType: 'gas' },
         topic: 'alerts',
       };
-      console.log('📣 Gaz kaçağı bildirimi gönderiliyor');
-      await admin.messaging().send(payload);
-      // notified bayrağını güncelle
-      return admin.firestore()
-        .collection('sensorAlerts')
-        .doc(event.data.after.id)
-        .update({ notified: true });
+      console.log('📣 Gaz bildirimi gönderiliyor');
+      return admin.messaging().send(payload);
     }
 
-    console.log('🔕 Bildirim koşulu sağlanmadı.');
+    console.log('🔕 Gaz koşulu yok.');
     return null;
   }
 );
-
 /**
  * 3️⃣ RealtimeDB’de /alarms/highTemperature yolundaki değişikliklere
  * bak, true olduktan sonra bildirim gönder

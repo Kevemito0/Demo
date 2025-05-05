@@ -45,7 +45,7 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
             .get()
             .addOnSuccessListener { snapshot ->
                 val alertList = snapshot.documents.mapNotNull { doc ->
-                    val gas = doc.getLong("gas")?.toInt()
+                    val gas = doc.getBoolean("gas")
                     val motion = doc.getBoolean("motion")
                     val temperature = doc.getLong("temperature")?.toInt()
                     val timestamp = doc.getTimestamp("timestamp")?.toDate()
