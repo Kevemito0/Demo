@@ -1,5 +1,6 @@
 package com.example.capstone
 
+import android.provider.ContactsContract.Profile
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.auth.FirebaseAuth
 
@@ -44,7 +46,8 @@ fun logoutUser(onLoggedOut: () -> Unit) {
 @Composable
 fun SettingsScreen(
     paddingValues: PaddingValues,
-    navController: NavController
+    navController: NavController,
+    outerNavController: NavController
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
 
@@ -72,20 +75,11 @@ fun SettingsScreen(
                     // Profile
                     ListItem(
                         modifier = Modifier
-                            .clickable { /* navController.navigate("profileEdit") */ }
+                            .clickable { navController.navigate("profileEdit") }
                             .padding(horizontal = 16.dp),
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile"
-                            )
-                        },
-                        headlineContent = {
-                            Text("Profile")
-                        },
-                        supportingContent = {
-                            Text("Edit your profile information")
-                        }
+                        leadingContent = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                        headlineContent = { Text("Profile") },
+                        supportingContent = { Text("Edit your profile information") }
                     )
 
                     Divider()
@@ -103,17 +97,7 @@ fun SettingsScreen(
                             Text("Notifications")
                         },
                         trailingContent = {
-                            MySwitch()
-//                            Switch(
-//                                thumbContent = {
-//                                    Icon(
-//                                        imageVector = Icons.Default.Check,
-//                                        contentDescription = stringResource(id = switch_check)
-//                                    )
-//                                },
-//                                checked = notificationsEnabled,
-//                                onCheckedChange = { notificationsEnabled = it }
-//                            )
+                           MySwitch()
                         }
                     )
 
@@ -145,7 +129,7 @@ fun SettingsScreen(
         Button(
             onClick = {
                 logoutUser {
-                    navController.navigate("auth") {
+                    outerNavController.navigate("auth") {
                         popUpTo("main") { inclusive = true }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.example.capstone
 
+import Gaser
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
@@ -105,7 +106,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
     override fun onDestroy() {
         super.onDestroy()
         auth.removeAuthStateListener(authStateListener)
@@ -156,7 +156,6 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                 actions = {
                     IconButton(onClick = {
                         Log.d("Message", "Clicked")
-                        navController.navigate("alertScreen")
                     }) {
                         Icon(imageVector = Icons.Filled.Message, contentDescription = "")
                     }
@@ -219,10 +218,10 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                     AlertsScreen(paddingValues, navController)
                 }
                 composable("settings") {
-                    SettingsScreen(
-                        paddingValues,
-                        outerNavController
-                    )
+                    SettingsScreen(paddingValues,
+                        navController,
+                        outerNavController)
+//                    Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {
                     FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
@@ -231,6 +230,9 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                     //addData()
                     Gaser(paddingValues, outerNavController) // Profile sayfası
                 }
+                composable("profileEdit") {
+                    ProfileEditScreen(paddingValues, navController)
+                }
             }
         }
 
@@ -238,7 +240,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
 }
 
 
-fun addData() {
+fun addData(){
     val db = Firebase.firestore
 
     val user = hashMapOf(
