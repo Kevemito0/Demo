@@ -120,7 +120,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
         }
 
         // "+" Butonu
-        item {
+      /*  item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,7 +140,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                     Text(text = "+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
             }
-        }
+        }*/
     }
 }
 

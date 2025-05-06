@@ -142,7 +142,7 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
         }
 
         // "+" Butonu
-        item {
+       /* item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,7 +162,7 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
                     Text(text = "+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
             }
-        }
+        }*/
     }
 }
 

@@ -1,9 +1,11 @@
 package com.example.capstone
 
+import java.util.Date
+
 class SensorAlert (
-    val gas: Int,
+    val doorLock: Boolean,
+    val gas: Boolean,
     val motion: Boolean,
     val temperature: Int,
-    val timestamp: String,
-    val notified: Boolean
+    val timestamp: Date
 )
