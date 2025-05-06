@@ -114,7 +114,7 @@ fun ProfileEditScreen(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Name") },
+            label = { Text("Username") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(8.dp))

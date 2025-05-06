@@ -1,6 +1,5 @@
 package com.example.capstone
 
-import Gaser
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
@@ -9,10 +8,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
@@ -114,6 +115,7 @@ class MainActivity : ComponentActivity() {
 }
 
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAndBottomBars(outerNavController: NavHostController) {
@@ -132,9 +134,9 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
             unselectedIcon = Icons.Outlined.Settings
         ),
         BottomNavItem(
-            title = "Profile",
-            selectedIcon = Icons.Filled.Person,
-            unselectedIcon = Icons.Outlined.Person
+            title = "Family",
+            selectedIcon = Icons.Filled.Home,
+            unselectedIcon = Icons.Outlined.Home
         )
     )
 
@@ -156,6 +158,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                 actions = {
                     IconButton(onClick = {
                         Log.d("Message", "Clicked")
+                        navController.navigate("alertScreen")
                     }) {
                         Icon(imageVector = Icons.Filled.Message, contentDescription = "")
                     }

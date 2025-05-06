@@ -40,7 +40,7 @@ data class FamilyMember(
 fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
     var showLogoutDialog by remember { mutableStateOf(false) }
-    val tabs = listOf("Davet Oluştur", "Koda Katıl", "Aile Üyeleri")
+    val tabs = listOf("Invitation Code", "Join to Family", "Family")
 
     Scaffold(
         topBar = {
@@ -66,7 +66,7 @@ fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
                                 imageVector = when (index) {
                                     0 -> Icons.Default.Key
                                     1 -> Icons.Default.Person
-                                    else -> Icons.Default.Person
+                                    else -> Icons.Default.Home
                                 },
                                 contentDescription = title
                             )
@@ -148,11 +148,11 @@ fun InviteGenerationScreen() {
                                         )
                                     )
                                     .addOnSuccessListener {
-                                        Toast.makeText(context, "Kod oluşturuldu: $code", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Code generated: $code", Toast.LENGTH_SHORT).show()
                                         isGenerating = false
                                     }
                                     .addOnFailureListener {
-                                        Toast.makeText(context, "Kod oluşturulamadı", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Could not generate code", Toast.LENGTH_SHORT).show()
                                         isGenerating = false
                                     }
                             }
@@ -167,7 +167,7 @@ fun InviteGenerationScreen() {
             enabled = !isGenerating
         ) {
             if (isGenerating) CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(end = 8.dp))
-            Text("Davet Kodu Oluştur")
+            Text("Generate Invitation Code")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -184,9 +184,9 @@ fun InviteGenerationScreen() {
                 Text("Kod: $code", style = MaterialTheme.typography.titleMedium)
                 IconButton(onClick = {
                     clipboard.setText(AnnotatedString(code))
-                    Toast.makeText(context, "Kod kopyalandı", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Code coppied", Toast.LENGTH_SHORT).show()
                 }) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = "Kopyala")
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
                 }
             }
         }
@@ -220,7 +220,7 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
         OutlinedTextField(
             value = inputCode,
             onValueChange = { inputCode = it },
-            label = { Text("Davet Kodu") },
+            label = { Text("Invitation Code") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(16.dp))
@@ -233,7 +233,7 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                     .get()
                     .addOnSuccessListener { result ->
                         if (result.isEmpty) {
-                            Toast.makeText(context, "Kod geçersiz veya kullanıldı", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Code is invalid or used", Toast.LENGTH_SHORT).show()
                             isLoading = false
                             return@addOnSuccessListener
                         }
@@ -260,15 +260,15 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
             enabled = !isLoading
         ) {
             if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(end = 8.dp))
-            Text("Katıl")
+            Text("Join")
         }
     }
 
     if (showConfirmDialog && pendingFamilyId != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Aile Değiştirme") },
-            text = { Text("Zaten **${oldFamilyName}** ailesindesin. Bu aileden ayrılıp yeni aileye katılmak istediğine emin misin?") },
+            title = { Text("Family Change") },
+            text = { Text("You are already in **${oldFamilyName}** . Are you sure you want to leave this family and join the new one?") },
             confirmButton = {
                 TextButton(onClick = {
                     showConfirmDialog = false
@@ -278,10 +278,10 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                         .addOnSuccessListener {
                             joinFamily(userId, pendingFamilyId!!, inputCode, context) { isLoading = false }
                         }
-                }) { Text("Evet, devam et") }
+                }) { Text("Yes,continue") }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) { Text("İptal") }
+                TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -323,10 +323,10 @@ private fun joinFamily(
                     firestore.collection("invites").document(inviteDocId)
                         .update("isUsed", true)
 
-                    Toast.makeText(context, "Aileye başarıyla katıldınız!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "You have successfully joined the family!", Toast.LENGTH_SHORT).show()
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(context, "Katılırken hata: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,"Error while joining: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
                 .addOnCompleteListener { onComplete() }
         }
@@ -418,7 +418,7 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                     firestore.collection("Families").document(familyId)
                         .update("familyName", updated)
                         .addOnSuccessListener {
-                            Toast.makeText(context, "Aile ismi güncellendi", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Family name updated!", Toast.LENGTH_SHORT).show()
                         }
                     showEditDialog = false
                 },
@@ -427,7 +427,7 @@ fun FamilyMemberListScreen(navController: NavHostController) {
         }
 
         Spacer(Modifier.height(24.dp))
-        Text("Aile Üyeleri (${memberList.size})", style = MaterialTheme.typography.titleLarge)
+        Text("Family Members (${memberList.size})", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -455,12 +455,12 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                                             Toast.makeText(context, "${member.name} silindi", Toast.LENGTH_SHORT).show()
                                         }
                                 }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Sil")
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
                                 }
                             }
                         }
-                        Text(member.email)
-                        Text("Katılım: ${member.joinDate}", style = MaterialTheme.typography.bodySmall)
+//                        Text(member.email)
+                        Text("Join Time: ${member.joinDate}", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
@@ -484,7 +484,7 @@ fun FamilyNameCard(
         ) {
             Icon(Icons.Default.Home, contentDescription = null, modifier = Modifier.size(32.dp))
             Spacer(Modifier.width(12.dp))
-            Text("Aile: $familyName", style = MaterialTheme.typography.titleMedium)
+            Text(" $familyName", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.weight(1f))
             if (isOwner) {
                 IconButton(onClick = onEditClick) {
