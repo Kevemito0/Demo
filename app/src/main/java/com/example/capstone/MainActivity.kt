@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
                     composable("main") {
                         TopAndBottomBars(navController)
                     }
+
                 }
             }
         }
@@ -211,6 +212,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                 }
                 composable("settings") {
                     SettingsScreen(paddingValues,
+                        navController,
                         outerNavController)
 //                    Kerem(paddingValues) // Settings sayfası
                 }
@@ -220,6 +222,9 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                     }
                     //addData()
                     Gaser(paddingValues, outerNavController) // Profile sayfası
+                }
+                composable("profileEdit") {
+                    ProfileEditScreen(paddingValues, navController)
                 }
             }
         }

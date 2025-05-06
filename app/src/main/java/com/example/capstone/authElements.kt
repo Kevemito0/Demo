@@ -1,16 +1,9 @@
 package com.example.capstone
 
-import android.content.ContentValues.TAG
-import android.nfc.Tag
 import android.util.Log
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -18,41 +11,27 @@ import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.auth.User
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import java.security.MessageDigest
-import java.util.UUID
+import androidx.compose.material3.ExperimentalMaterial3Api
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthTextField(
     value: String,
@@ -65,22 +44,27 @@ fun AuthTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     supportingText: @Composable (() -> Unit)? = null
-
 ) {
     TextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(text = label) },
+        label = { Text(label) },
         singleLine = true,
-        keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        leadingIcon = leadingIcon,
-        trailingIcon = trailingIcon,
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.textFieldColors(
+            containerColor          = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedIndicatorColor   = Color.Transparent,
+        ),
+        leadingIcon      = leadingIcon,
+        trailingIcon     = trailingIcon,
         visualTransformation = visualTransformation,
-        supportingText = supportingText
+        supportingText   = supportingText,
+        keyboardOptions  = keyboardOptions,
+        keyboardActions  = keyboardActions
     )
 }
 
@@ -96,263 +80,389 @@ fun PasswordField(
     label: String
 ) {
     AuthTextField(
-        value = password,
-        onValueChange = onPasswordChange,
-        label = label,
-        leadingIcon = { Icon(Icons.Filled.Password, contentDescription = null) },
-        keyboardOptions = KeyboardOptions.Default.copy(
-            capitalization = KeyboardCapitalization.None,
-            autoCorrectEnabled = false,
-            keyboardType = KeyboardType.Password,
-            imeAction = ImeAction.Done
-        ),
-        keyboardActions = KeyboardActions(onDone = { onDone() }),
-        modifier = modifier,
-        trailingIcon = {
-            val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+        value               = password,
+        onValueChange       = onPasswordChange,
+        label               = label,
+        leadingIcon         = { Icon(Icons.Filled.Password, contentDescription = null) },
+        trailingIcon        = {
+            val icon = if (passwordVisible)
+                Icons.Filled.VisibilityOff
+            else
+                Icons.Filled.Visibility
             Icon(
-                imageVector = image,
+                imageVector   = icon,
                 contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                modifier = Modifier.clickable { onPasswordVisibilityChange() }
+                modifier      = Modifier.clickable { onPasswordVisibilityChange() }
             )
         },
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        supportingText = supportingText
+        supportingText      = supportingText,
+        keyboardOptions     = KeyboardOptions.Default.copy(
+            capitalization     = KeyboardCapitalization.None,
+            autoCorrectEnabled = false,
+            keyboardType       = KeyboardType.Password,
+            imeAction          = ImeAction.Done
+        ),
+        keyboardActions     = KeyboardActions(onDone = { onDone() }),
+        modifier            = modifier
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     paddingValues: PaddingValues,
     onLoginClick: (String, String) -> Unit,
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit
 ) {
-    var userName by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var userName        by remember { mutableStateOf("") }
+    var password        by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    val label = "password"
 
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        color = Color(0xFF1A1A40)
     ) {
-        // Title
-        Text(
-            text = "Login",
-            fontSize = 24.sp,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
+        Column(
+            modifier            = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text     = "Login",
+                style    = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 32.dp),
+                color = Color(0xFFFFFFFF)
+            )
 
-        // Username field
-        AuthTextField(
-            value = userName,
-            onValueChange = { userName = it },
-            label = "Username",
-            leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(onNext = { /* Focus on password */ })
-        )
+            AuthTextField(
+                value           = userName,
+                onValueChange   = { userName = it },
+                label           = "Username",
+                leadingIcon     = { Icon(Icons.Filled.Person, contentDescription = null) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction    = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(onNext = { /* focus password */ })
+            )
 
-        // Password field
-        PasswordField(
-            password = password,
-            label = label,
-            onPasswordChange = { password = it },
-            passwordVisible = passwordVisible,
-            onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
-            onDone = { onLoginClick(userName, password) },
-            supportingText = {
+            PasswordField(
+                password                   = password,
+                label                      = "Password",
+                onPasswordChange           = { password = it },
+                passwordVisible            = passwordVisible,
+                onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
+                onDone                     = { onLoginClick(userName, password) },
+                supportingText             = {
+                    Text(
+                        text          = "Forgot Password",
+                        style         = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight     = FontWeight.Medium,
+                            textDecoration = TextDecoration.Underline
+                        ),
+                        color         = MaterialTheme.colorScheme.primary,
+                        modifier      = Modifier
+                            .fillMaxWidth()
+                            .clickable { onForgotPasswordClick() }
+                            .padding(end = 16.dp),
+                        textAlign     = TextAlign.End
+                    )
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick  = { onLoginClick(userName, password) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp),
+                shape    = RoundedCornerShape(12.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = Color(0xFF252424))
+            ) {
                 Text(
-                    text = "Forgot Password",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { /* Handle password reset */ },
-                    textAlign = TextAlign.End,
-                    textDecoration = TextDecoration.Underline
+                    text  = "Login",
+                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White)
                 )
             }
-        )
 
-        // Login button
-        Button(
-            onClick = { onLoginClick(userName, password) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text("Login")
-        }
-
-        // Register option
-        Row(
-            modifier = Modifier.padding(top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Don't have an account?")
-            Text(
-                text = "Register",
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .clickable { onRegisterClick() },
-                color = Color.Blue,
-                textDecoration = TextDecoration.Underline
-            )
+            Row(
+                modifier              = Modifier.padding(top = 16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Text(
+                    text  = "Don't have an account?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text     = "Register",
+                    style    = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color    = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { onRegisterClick() }
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     paddingValues: PaddingValues,
     onRegisterClick: (String, String, String) -> Unit,
     onLoginClick: () -> Unit
 ) {
-    var userName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var userName               by remember { mutableStateOf("") }
+    var email                  by remember { mutableStateOf("") }
+    var password               by remember { mutableStateOf("") }
+    var confirmPassword        by remember { mutableStateOf("") }
+    var passwordVisible        by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-    val label = "Password"
+    var passwordError          by remember { mutableStateOf<String?>(null) }
 
     fun validatePassword() {
         if (password.isNotEmpty()) {
-            val (isSecure, message) = checkPasswordSecurity(password)
-            passwordError = if (!isSecure) message else null
-        } else {
-            passwordError = null
-        }
+            val (secure, msg) = checkPasswordSecurity(password)
+            passwordError = if (!secure) msg else null
+        } else passwordError = null
     }
 
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        color = MaterialTheme.colorScheme.background
     ) {
-        // Title
-        Text(
-            text = "Register",
-            fontSize = 24.sp,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        // Username field
-        AuthTextField(
-            value = userName,
-            onValueChange = { userName = it },
-            label = "Username",
-            leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { /* Focus on email */ })
-        )
-
-        // Email field
-        AuthTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = "Email",
-            leadingIcon = {
-                Icon(
-                    Icons.Filled.Person,
-                    contentDescription = null
-                )
-            }, // Replace with email icon
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(onNext = { /* Focus on password */ })
-        )
-
-        // Password field
-        PasswordField(
-            password = password,
-            label = label,
-            onPasswordChange = {
-                password = it
-                validatePassword()
-            },
-            passwordVisible = passwordVisible,
-            onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
-            onDone = { /* Focus on confirm password */ },
-            supportingText = {
-                passwordError?.let {
-                    Text(
-                        text = it,
-                        color = Color.Red,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start
-                    )
-                }
-            }
-        )
-
-        // Confirm password field (with matching check)
-        PasswordField(
-            password = confirmPassword,
-            label = "Confirm your password",
-            onPasswordChange = { confirmPassword = it },
-            passwordVisible = confirmPasswordVisible,
-            onPasswordVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
-            onDone = {
-                if (password == confirmPassword && passwordError == null) {
-                    onRegisterClick(userName, email, password)
-                }
-            },
-            supportingText = {
-                if (password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword) {
-                    Text(
-                        text = "Passwords do not match",
-                        color = Color.Red,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End
-                    )
-                }
-            }
-        )
-
-        // Register button
-        Button(
-            onClick = { onRegisterClick(userName, email, password) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            enabled = password.isNotEmpty() && password == confirmPassword
+        Column(
+            modifier            = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Register")
-        }
-
-        // Login option
-        Row(
-            modifier = Modifier.padding(top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Already have an account?")
             Text(
-                text = "Login",
+                text     = "Register",
+                style    = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
+            // Username
+            AuthTextField(
+                value          = userName,
+                onValueChange  = { userName = it },
+                label          = "Username",
+                leadingIcon    = { Icon(Icons.Filled.Person, contentDescription = null) },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { /* focus email */ })
+            )
+
+            // Email
+            AuthTextField(
+                value          = email,
+                onValueChange  = { email = it },
+                label          = "Email",
+                leadingIcon    = { Icon(Icons.Filled.Person, contentDescription = null) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction    = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(onNext = { /* focus password */ })
+            )
+
+            // Password
+            PasswordField(
+                password                   = password,
+                label                      = "Password",
+                onPasswordChange           = {
+                    password = it
+                    validatePassword()
+                },
+                passwordVisible            = passwordVisible,
+                onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
+                onDone                     = { /* focus confirm */ },
+                supportingText             = {
+                    passwordError?.let {
+                        Text(it,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth().padding(start = 16.dp))
+                    }
+                }
+            )
+
+            // Confirm
+            PasswordField(
+                password                   = confirmPassword,
+                label                      = "Confirm Password",
+                onPasswordChange           = { confirmPassword = it },
+                passwordVisible            = confirmPasswordVisible,
+                onPasswordVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
+                onDone                     = {
+                    if (password == confirmPassword && passwordError == null) {
+                        onRegisterClick(userName, email, password)
+                    }
+                },
+                supportingText             = {
+                    if (password.isNotEmpty()
+                        && confirmPassword.isNotEmpty()
+                        && password != confirmPassword) {
+                        Text("Passwords do not match",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
+                            textAlign = TextAlign.End)
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick  = { onRegisterClick(userName, email, password) },
+                enabled  = password.isNotEmpty() && password == confirmPassword && passwordError == null,
                 modifier = Modifier
-                    .padding(start = 4.dp)
-                    .clickable { onLoginClick() },
-                color = Color.Blue,
-                textDecoration = TextDecoration.Underline
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp),
+                shape    = RoundedCornerShape(12.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text(
+                    text  = "Register",
+                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White)
+                )
+            }
+
+            Row(
+                modifier            = Modifier.padding(top = 16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment   = Alignment.CenterVertically
+            ) {
+                Text("Already have an account?", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text           = "Login",
+                    style          = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color          = MaterialTheme.colorScheme.primary,
+                    modifier       = Modifier.clickable { onLoginClick() }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ResetPasswordScreen(
+    paddingValues: PaddingValues,
+    onReset: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    var email       by remember { mutableStateOf("") }
+    var infoMessage by remember { mutableStateOf<String?>(null) }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier            = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text     = "Reset Password",
+                style    = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
+            TextField(
+                value          = email,
+                onValueChange  = { email = it },
+                label          = { Text("Email") },
+                singleLine     = true,
+                modifier       = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape          = RoundedCornerShape(12.dp),
+                colors         = TextFieldDefaults.textFieldColors(
+                    containerColor          = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor   = Color.Transparent
+                ),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction    = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions {
+                    /* same as pressing the button below */
+                    if (email.isBlank()) {
+                        infoMessage = "Please enter your email"
+                    } else {
+                        onReset(email)
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick    = {
+                    if (email.isBlank()) {
+                        infoMessage = "Please enter your email"
+                    } else {
+                        onReset(email)
+                    }
+                },
+                enabled    = email.isNotBlank(),
+                modifier   = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp),
+                shape      = RoundedCornerShape(12.dp),
+                colors     = ButtonDefaults.buttonColors(containerColor = Color(0xFF13C001))
+            ) {
+                Text(
+                    text  = "Send Reset Link",
+                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White)
+                )
+            }
+
+            infoMessage?.let {
+                Text(
+                    text     = it,
+                    color    = if (it.startsWith("Please")) Color.Red else Color.Green,
+                    style    = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
+            Text(
+                text           = "← Back to login",
+                style          = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight     = FontWeight.Medium,
+                    textDecoration = TextDecoration.Underline
+                ),
+                color          = MaterialTheme.colorScheme.primary,
+                modifier       = Modifier
+                    .padding(top = 24.dp)
+                    .clickable { onBack() }
             )
         }
     }
 }
 
 @Composable
-fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController) {
+fun AuthScreens(paddingValues: PaddingValues, navController: NavHostController) {
     var currentScreen by remember { mutableStateOf("login") }
-    var showDialog by remember { mutableStateOf(false) }
+    var showDialog    by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
     var onDialogDismiss by remember { mutableStateOf({}) }
 
@@ -362,8 +472,8 @@ fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController)
                 showDialog = false
                 onDialogDismiss()
             },
-            title = { Text("Notification") },
-            text = { Text(dialogMessage) },
+            title   = { Text("Notification") },
+            text    = { Text(dialogMessage) },
             confirmButton = {
                 Button(onClick = {
                     showDialog = false
@@ -377,198 +487,162 @@ fun AuthScreens(paddingValues: PaddingValues, navController : NavHostController)
 
     when (currentScreen) {
         "login" -> LoginScreen(
-            paddingValues = paddingValues,
-            onLoginClick = { username, password ->
-                loginUser(
-                    username = username,
-                    password = password,
+            paddingValues         = paddingValues,
+            onLoginClick          = { u, p ->
+                loginUser(u, p,
                     onSuccess = {
-                        navController.navigate("main") {
-                            popUpTo("auth") { inclusive = true }
-                        }
+                        navController.navigate("main") { popUpTo("auth") { inclusive = true } }
                     },
-                    onFailure = { errorMessage ->
-                        // Show error dialog
-                        dialogMessage = errorMessage
+                    onFailure = { msg ->
+                        dialogMessage = msg
                         onDialogDismiss = {}
                         showDialog = true
                     }
                 )
             },
-            onRegisterClick = {
-                currentScreen = "register"
-            }
+            onRegisterClick       = { currentScreen = "register" },
+            onForgotPasswordClick = { currentScreen = "reset" }
         )
 
         "register" -> RegisterScreen(
-            paddingValues = paddingValues,
-            onRegisterClick = { username, email, password ->
-                registerUser(
-                    username = username,
-                    email = email,
-                    password = password,
+            paddingValues   = paddingValues,
+            onRegisterClick = { u, e, p ->
+                registerUser(u, e, p,
                     onSuccess = {
-                        dialogMessage = "Kayıt başarılı!"
+                        dialogMessage = "Registration successful!"
                         onDialogDismiss = { currentScreen = "login" }
                         showDialog = true
                     },
-                    onFailure = { errorMessage ->
-                        dialogMessage = errorMessage
+                    onFailure = { msg ->
+                        dialogMessage = msg
+                        onDialogDismiss = {}
                         showDialog = true
                     }
                 )
             },
+            onLoginClick     = { currentScreen = "login" }
+        )
 
-                    onLoginClick = {
-                currentScreen = "login"
-            }
+        "reset" -> ResetPasswordScreen(
+            paddingValues = paddingValues,
+            onReset       = { email ->
+                resetPassword(email,
+                    onSuccess = {
+                        dialogMessage = "Password reset email sent!"
+                        onDialogDismiss = { currentScreen = "login" }
+                        showDialog = true
+                    },
+                    onFailure = { msg ->
+                        dialogMessage = "Error: $msg"
+                        onDialogDismiss = {}
+                        showDialog = true
+                    }
+                )
+            },
+            onBack        = { currentScreen = "login" }
         )
     }
 }
 
-fun registerUser(username: String, email: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-    val db = Firebase.firestore
+fun resetPassword(
+    email: String,
+    onSuccess: () -> Unit,
+    onFailure: (String) -> Unit
+) {
+    FirebaseAuth.getInstance()
+        .sendPasswordResetEmail(email)
+        .addOnSuccessListener { onSuccess() }
+        .addOnFailureListener { e -> onFailure(e.message ?: "Unknown error") }
+}
+
+fun registerUser(
+    username: String,
+    email: String,
+    password: String,
+    onSuccess: () -> Unit,
+    onFailure: (String) -> Unit
+) {
+    val db   = Firebase.firestore
     val auth = FirebaseAuth.getInstance()
     val randomFamilyId = db.collection("Families").document().id
-    // Önce Firestore'da username var mı kontrol et
+
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
-        .addOnSuccessListener { documents ->
-            if (!documents.isEmpty) {
-                onFailure("Bu kullanıcı adı zaten alınmış.")
+        .addOnSuccessListener { docs ->
+            if (!docs.isEmpty) {
+                onFailure("This username is already taken.")
                 return@addOnSuccessListener
             }
-
-            // Kullanıcı adında sıkıntı yok, FirebaseAuth'a kayıt ol
             auth.createUserWithEmailAndPassword(email, password)
-                .addOnSuccessListener { authResult ->
-                    val userId = authResult.user?.uid ?: return@addOnSuccessListener
-
-
+                .addOnSuccessListener { result ->
+                    val userId = result.user?.uid ?: return@addOnSuccessListener
                     val user = hashMapOf(
                         "User Name" to username,
-                        "E-Mail" to email,
-                        "Password" to hashPassword(password),
-                        "userId" to userId,
-                        "familyId" to randomFamilyId
+                        "E-Mail"    to email,
+                        "Password"  to hashPassword(password),
+                        "userId"    to userId,
+                        "familyId"  to randomFamilyId
                     )
-
-                    db.collection("UsersTest")
-                        .document(userId)
+                    db.collection("UsersTest").document(userId)
                         .set(user)
-                        .addOnSuccessListener {
-                            onSuccess()
-                        }
-                        .addOnFailureListener { e ->
-                            onFailure("Firestore kayıt hatası: ${e.message}")
-                        }
+                        .addOnSuccessListener { onSuccess() }
+                        .addOnFailureListener { e -> onFailure("Firestore error: ${e.message}") }
                 }
-                .addOnFailureListener { e ->
-                    onFailure("FirebaseAuth kayıt hatası: ${e.message}")
-                }
+                .addOnFailureListener { e -> onFailure("Auth error: ${e.message}") }
         }
-        .addOnFailureListener { e ->
-            onFailure("Firestore kontrol hatası: ${e.message}")
-        }
+        .addOnFailureListener { e -> onFailure("Firestore lookup error: ${e.message}") }
 }
 
-
-
-// Very simple password hashing function for demonstration
-// In a real app, use a proper security library
-private fun hashPassword(password: String): String {
-    return MessageDigest.getInstance("SHA-256")
-        .digest(password.toByteArray())
-        .fold("") { str, it -> str + "%02x".format(it) }
-}
-
-fun loginUser(username: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-    val db = Firebase.firestore
+fun loginUser(
+    username: String,
+    password: String,
+    onSuccess: () -> Unit,
+    onFailure: (String) -> Unit
+) {
+    val db   = Firebase.firestore
     val auth = FirebaseAuth.getInstance()
 
-    // Önce Firestore'dan username -> email bul
     db.collection("UsersTest")
         .whereEqualTo("User Name", username)
         .get()
-        .addOnSuccessListener { documents ->
-            if (documents.isEmpty) {
-                onFailure("Kullanıcı bulunamadı.")
+        .addOnSuccessListener { docs ->
+            if (docs.isEmpty) {
+                onFailure("User not found.")
                 return@addOnSuccessListener
             }
-
-            val userDoc = documents.documents[0]
-            val email = userDoc.getString("E-Mail") ?: return@addOnSuccessListener
-
-            // Bulunan email ile FirebaseAuth login
+            val email = docs.documents[0].getString("E-Mail") ?: return@addOnSuccessListener
             auth.signInWithEmailAndPassword(email, password)
-                .addOnSuccessListener {
-                    onSuccess()
-                }
-                .addOnFailureListener { e ->
-                    onFailure("Giriş başarısız: ${e.message}")
-                }
+                .addOnSuccessListener { onSuccess() }
+                .addOnFailureListener { e -> onFailure("Login failed: ${e.message}") }
         }
-        .addOnFailureListener { e ->
-            onFailure("Firestore'dan kullanıcı bulunamadı: ${e.message}")
-        }
+        .addOnFailureListener { e -> onFailure("Firestore lookup error: ${e.message}") }
 }
+
+private fun hashPassword(password: String): String =
+    MessageDigest.getInstance("SHA-256")
+        .digest(password.toByteArray())
+        .joinToString("") { "%02x".format(it) }
 
 fun checkPasswordSecurity(password: String): Pair<Boolean, String> {
-    // Check minimum length
-    if (password.length < 8) {
-        return Pair(false, "Şifre en az 8 karakter olmalıdır.")
+    if (password.length < 8) return false to "Password must be at least 8 characters."
+    if (!password.any { it.isUpperCase() }) return false to "Include at least one uppercase letter."
+    if (!password.any { it.isLowerCase() }) return false to "Include at least one lowercase letter."
+    if (!password.any { it.isDigit() }) return false to "Include at least one digit."
+    val specials = "!@#$%^&*()_-+=<>?/[]{}|."
+    if (!password.any { it in specials }) return false to "Include at least one special character."
+    val common = listOf("password","123456","qwerty","admin","welcome")
+    if (password.lowercase() in common) return false to "Too common; choose another password."
+    if (password.groupBy { it }.any { it.value.size > 3 }) return false to "Too many repeated characters."
+    val sequences = listOf("abcdef","123456","qwerty")
+    if (sequences.any { seq -> seq.windowed(3).any { password.lowercase().contains(it) } }) {
+        return false to "Avoid sequential characters."
     }
-
-    // Check for uppercase letters
-    if (!password.any { it.isUpperCase() }) {
-        return Pair(false, "Şifre en az bir büyük harf içermelidir.")
-    }
-
-    // Check for lowercase letters
-    if (!password.any { it.isLowerCase() }) {
-        return Pair(false, "Şifre en az bir küçük harf içermelidir.")
-    }
-
-    // Check for digits
-    if (!password.any { it.isDigit() }) {
-        return Pair(false, "Şifre en az bir rakam içermelidir.")
-    }
-
-    // Check for special characters
-    val specialChars = "!@#$%^&*()_-+=<>?/[]{}|."
-    if (!password.any { specialChars.contains(it) }) {
-        return Pair(false, "Şifre en az bir özel karakter içermelidir (örn: !@#$%^&*()_-+=<>?/[]{}|).")
-    }
-
-    // Check for common passwords (simplified example - in real app, use a more extensive list)
-    val commonPasswords = listOf("password", "123456", "qwerty", "admin", "welcome", "password123")
-    if (commonPasswords.contains(password.lowercase())) {
-        return Pair(false, "Bu şifre çok yaygın ve kolayca tahmin edilebilir.")
-    }
-
-    // Check for repeated characters
-    val repeatedChars = password.groupBy { it }.filter { it.value.size > 3 }
-    if (repeatedChars.isNotEmpty()) {
-        return Pair(false, "Şifre çok fazla tekrar eden karakter içeriyor.")
-    }
-
-    // Check for sequential characters
-    val sequences = listOf("abcdef", "123456", "qwerty")
-    for (seq in sequences) {
-        if (seq.windowedSequence(3).any { window -> password.lowercase().contains(window) }) {
-            return Pair(false, "Şifre sıralı karakterler içeriyor.")
-        }
-    }
-
-    // If all checks pass, return success
-    return Pair(true, "Güçlü şifre!")
+    return true to "Strong password!"
 }
-
 
 @Preview(showBackground = true)
 @Composable
-fun OpenAuthScreens() {
-    val navController = rememberNavController()
-    AuthScreens(PaddingValues(), navController)
+fun OpenAuthScreensPreview() {
+    AuthScreens(PaddingValues(), rememberNavController())
 }
