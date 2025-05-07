@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -169,6 +170,7 @@ fun InviteGenerationScreen() {
             if (isGenerating) CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(end = 8.dp))
             Text("Generate Invitation Code")
         }
+        HardwareCommandButtons()
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -192,7 +194,34 @@ fun InviteGenerationScreen() {
         }
     }
 }
+@Composable
+fun HardwareCommandButtons() {
+    // Firebase RealtimeDB’de "komut" yoluna referans
+    val komutRef = FirebaseDatabase.getInstance().getReference("komut")
 
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Button(onClick = { komutRef.setValue("kapi_ac") }) {
+            Text("Kapı Aç")
+        }
+        Button(onClick = { komutRef.setValue("kamera_foto") }) {
+            Text("Fotoğraf Çek")
+        }
+        Button(onClick = { komutRef.setValue("vana_ac") }) {
+            Text("Gaz Vanasını Aç")
+        }
+        Button(onClick = { komutRef.setValue("vana_kapat") }) {
+            Text("Gaz Vanasını Kapat")
+        }
+        Button(onClick = { komutRef.setValue("buzzer_kapat") }) {
+            Text("Buzzer'ı Kapat")
+        }
+    }
+}
 @Composable
 fun JoinWithInviteCodeScreen(navController: NavHostController) {
     val context = LocalContext.current
