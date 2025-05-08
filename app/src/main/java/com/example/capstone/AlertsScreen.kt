@@ -112,7 +112,7 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
                         .wrapContentHeight()//.height(120.dp)
                         .padding(16.dp),
                     shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+//                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(
                         modifier = Modifier

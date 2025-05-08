@@ -1,5 +1,7 @@
 package com.example.capstone
 
+import com.example.capstone.ui.theme.CapstoneTheme
+import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,6 +32,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.security.MessageDigest
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.tooling.preview.PreviewParameter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +70,7 @@ fun AuthTextField(
         keyboardActions  = keyboardActions
     )
 }
+
 
 @Composable
 fun PasswordField(
@@ -124,7 +128,7 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
-        color = Color(0xFF1A1A40)
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier            = Modifier.fillMaxSize(),
@@ -135,7 +139,7 @@ fun LoginScreen(
                 text     = "Login",
                 style    = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 32.dp),
-                color = Color(0xFFFFFFFF)
+                color = MaterialTheme.colorScheme.primary
             )
 
             AuthTextField(
@@ -162,9 +166,9 @@ fun LoginScreen(
                         text          = "Forgot Password",
                         style         = MaterialTheme.typography.bodySmall.copy(
                             fontWeight     = FontWeight.Medium,
-                            textDecoration = TextDecoration.Underline
+                            textDecoration = TextDecoration.Underline,
                         ),
-                        color         = MaterialTheme.colorScheme.primary,
+                        color         = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier      = Modifier
                             .fillMaxWidth()
                             .clickable { onForgotPasswordClick() }
@@ -183,11 +187,14 @@ fun LoginScreen(
                     .padding(horizontal = 16.dp)
                     .height(48.dp),
                 shape    = RoundedCornerShape(12.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = Color(0xFF252424))
+                colors   = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
             ) {
                 Text(
                     text  = "Login",
-                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White)
+                    style = MaterialTheme
+                        .typography
+                        .labelLarge
+                        .copy(color = MaterialTheme.colorScheme.onSecondary)
                 )
             }
 
@@ -204,7 +211,7 @@ fun LoginScreen(
                 Text(
                     text     = "Register",
                     style    = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color    = MaterialTheme.colorScheme.primary,
+                    color    = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.clickable { onRegisterClick() }
                 )
             }
@@ -330,11 +337,12 @@ fun RegisterScreen(
                     .padding(horizontal = 16.dp)
                     .height(48.dp),
                 shape    = RoundedCornerShape(12.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors   = ButtonDefaults.buttonColors(Color(0xFF4CAF50))
             ) {
                 Text(
                     text  = "Register",
-                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White)
+                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -348,7 +356,7 @@ fun RegisterScreen(
                 Text(
                     text           = "Login",
                     style          = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color          = MaterialTheme.colorScheme.primary,
+                    color          = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier       = Modifier.clickable { onLoginClick() }
                 )
             }
@@ -427,11 +435,12 @@ fun ResetPasswordScreen(
                     .padding(horizontal = 16.dp)
                     .height(48.dp),
                 shape      = RoundedCornerShape(12.dp),
-                colors     = ButtonDefaults.buttonColors(containerColor = Color(0xFF13C001))
+                colors     = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
             ) {
                 Text(
                     text  = "Send Reset Link",
-                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White)
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -641,8 +650,109 @@ fun checkPasswordSecurity(password: String): Pair<Boolean, String> {
     return true to "Strong password!"
 }
 
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun OpenAuthScreensPreview() {
     AuthScreens(PaddingValues(), rememberNavController())
+}
+@Preview(
+    name = "Login • Light",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
+@Composable
+fun PreviewLoginLight() {
+    CapstoneTheme {
+        LoginScreen(
+            paddingValues = PaddingValues(),
+            onLoginClick = { _, _ -> },
+            onRegisterClick = {},
+            onForgotPasswordClick = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Login • Dark",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewLoginDark() {
+    CapstoneTheme {
+        LoginScreen(
+            paddingValues = PaddingValues(),
+            onLoginClick = { _, _ -> },
+            onRegisterClick = {},
+            onForgotPasswordClick = {}
+        )
+    }
+}
+
+// —— Repeat for RegisterScreen ——
+
+@Preview(
+    name = "Register • Light",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
+@Composable
+fun PreviewRegisterLight() {
+    CapstoneTheme {
+        RegisterScreen(
+            paddingValues = PaddingValues(),
+            onRegisterClick = { _, _, _ -> },
+            onLoginClick = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Register • Dark",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewRegisterDark() {
+    CapstoneTheme {
+        RegisterScreen(
+            paddingValues = PaddingValues(),
+            onRegisterClick = { _, _, _ -> },
+            onLoginClick = {}
+        )
+    }
+}
+
+// —— And for ResetPasswordScreen ——
+
+@Preview(
+    name = "Reset • Light",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
+@Composable
+fun PreviewResetLight() {
+    CapstoneTheme {
+        ResetPasswordScreen(
+            paddingValues = PaddingValues(),
+            onReset = {},
+            onBack = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Reset • Dark",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewResetDark() {
+    CapstoneTheme {
+        ResetPasswordScreen(
+            paddingValues = PaddingValues(),
+            onReset = {},
+            onBack = {}
+        )
+    }
 }

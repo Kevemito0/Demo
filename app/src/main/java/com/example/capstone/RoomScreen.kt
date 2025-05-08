@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +55,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
 
 
     // Firestore'dan familyId'yi al
+
     LaunchedEffect(Unit) {
         userId?.let {
             firestore.collection("UsersTest")
@@ -90,7 +92,8 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-    ) {
+    )
+    {
         items(rooms) { room ->
             Card(
                 modifier = Modifier
@@ -101,7 +104,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                         navController.navigate("device/${room.name}")
                     },
                 shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+//                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Column(
                     modifier = Modifier

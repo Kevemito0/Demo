@@ -165,7 +165,11 @@ fun InviteGenerationScreen() {
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isGenerating
+            enabled = !isGenerating,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            )
         ) {
             if (isGenerating) CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(end = 8.dp))
             Text("Generate Invitation Code")
@@ -205,19 +209,39 @@ fun HardwareCommandButtons() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Button(onClick = { komutRef.setValue("kapi_ac") }) {
+        Button(onClick = { komutRef.setValue("kapi_ac") }
+            ,colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary
+        )) {
             Text("Kapı Aç")
         }
-        Button(onClick = { komutRef.setValue("kamera_foto") }) {
+        Button(onClick = { komutRef.setValue("kamera_foto") }
+                ,colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            )) {
             Text("Fotoğraf Çek")
         }
-        Button(onClick = { komutRef.setValue("vana_ac") }) {
+        Button(onClick = { komutRef.setValue("vana_ac") }
+                ,colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            )) {
             Text("Gaz Vanasını Aç")
         }
-        Button(onClick = { komutRef.setValue("vana_kapat") }) {
+        Button(onClick = { komutRef.setValue("vana_kapat") }
+                ,colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            )) {
             Text("Gaz Vanasını Kapat")
         }
-        Button(onClick = { komutRef.setValue("buzzer_kapat") }) {
+        Button(onClick = { komutRef.setValue("buzzer_kapat") }
+                ,colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            )) {
             Text("Buzzer'ı Kapat")
         }
     }
@@ -286,7 +310,11 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                     }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
+            enabled = !isLoading,
+            colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary
+            )
         ) {
             if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(end = 8.dp))
             Text("Join")
@@ -463,7 +491,7 @@ fun FamilyMemberListScreen(navController: NavHostController) {
             items(memberList, key = { it.id }) { member ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(4.dp)
+//                    elevation = CardDefaults.cardElevation(4.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -505,7 +533,7 @@ fun FamilyNameCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(6.dp)
+//        elevation = CardDefaults.cardElevation(6.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
