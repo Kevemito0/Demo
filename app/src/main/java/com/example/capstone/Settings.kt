@@ -1,15 +1,22 @@
 package com.example.capstone
 
+import android.content.res.Configuration
+import android.provider.ContactsContract.Profile
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.waterfallPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -20,16 +27,20 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.auth.FirebaseAuth
 
@@ -41,21 +52,33 @@ fun logoutUser(onLoggedOut: () -> Unit) {
 @Composable
 fun SettingsScreen(
     paddingValues: PaddingValues,
-    navController: NavController
+    navController: NavController,
+    outerNavController: NavController
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
-
+    var ListItemColors = ListItemColors(
+        containerColor = Color(0x00000000),
+        leadingIconColor = MaterialTheme.colorScheme.onBackground,
+        disabledHeadlineColor = MaterialTheme.colorScheme.onSecondary,
+        supportingTextColor = MaterialTheme.colorScheme.onBackground,
+        trailingIconColor = MaterialTheme.colorScheme.onBackground,
+        headlineColor = MaterialTheme.colorScheme.onBackground,
+        overlineColor = MaterialTheme.colorScheme.onBackground,
+        disabledLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        disabledTrailingIconColor = MaterialTheme.colorScheme.secondary
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues),
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(paddingValues).background(MaterialTheme.colorScheme.background),
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Column {
             Text(
                 text = "Settings",
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Card(
@@ -63,29 +86,23 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 shape = MaterialTheme.shapes.medium,
-                elevation = CardDefaults.cardElevation(4.dp)
+//                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column {
+                Column (
+                    modifier = Modifier.background(color = MaterialTheme.colorScheme.secondary)
+                ){
                     // Profile
                     ListItem(
                         modifier = Modifier
-                            .clickable { /* navController.navigate("profileEdit") */ }
+                            .clickable { navController.navigate("profileEdit") }
                             .padding(horizontal = 16.dp),
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile"
-                            )
-                        },
-                        headlineContent = {
-                            Text("Profile")
-                        },
-                        supportingContent = {
-                            Text("Edit your profile information")
-                        }
+                        leadingContent = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                        headlineContent = { Text("Profile") },
+                        supportingContent = { Text("Edit your profile information") },
+                        colors = ListItemColors
                     )
 
-                    Divider()
+                    Divider(color = Color(0xFA313131))
 
                     // Notifications toggle
                     ListItem(
@@ -101,20 +118,13 @@ fun SettingsScreen(
                         },
                         trailingContent = {
                             MySwitch()
-//                            Switch(
-//                                thumbContent = {
-//                                    Icon(
-//                                        imageVector = Icons.Default.Check,
-//                                        contentDescription = stringResource(id = switch_check)
-//                                    )
-//                                },
-//                                checked = notificationsEnabled,
-//                                onCheckedChange = { notificationsEnabled = it }
-//                            )
-                        }
+                        },
+                        colors = ListItemColors
                     )
 
-                    Divider()
+                    Divider(
+                        color = Color(0xFA313131)
+                    )
 
                     // About
                     ListItem(
@@ -132,7 +142,8 @@ fun SettingsScreen(
                         },
                         supportingContent = {
                             Text("Version 1.0.0")
-                        }
+                        },
+                        colors = ListItemColors
                     )
                 }
             }
@@ -142,7 +153,7 @@ fun SettingsScreen(
         Button(
             onClick = {
                 logoutUser {
-                    navController.navigate("auth") {
+                    outerNavController.navigate("auth") {
                         popUpTo("main") { inclusive = true }
                     }
                 }
@@ -155,6 +166,8 @@ fun SettingsScreen(
                 contentColor = MaterialTheme.colorScheme.onError
             )
         ) {
+            Icon(Icons.Default.ExitToApp, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
             Text("Logout", style = MaterialTheme.typography.titleMedium)
         }
     }
@@ -184,4 +197,36 @@ fun MySwitch() {
             uncheckedThumbColor = Color(0x8D000000)
         )
     )
+}
+
+@Preview(
+    name       = "Settings • Light",
+    showBackground = true,
+    uiMode     = Configuration.UI_MODE_NIGHT_NO
+)
+@Composable
+fun PreviewSettingsLight() {
+    CapstoneTheme(dynamicColor = false) {
+        SettingsScreen(
+            paddingValues      = PaddingValues(),
+            navController      = rememberNavController(),
+            outerNavController = rememberNavController()
+        )
+    }
+}
+
+@Preview(
+    name       = "Settings • Dark",
+    showBackground = true,
+    uiMode     = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewSettingsDark() {
+    CapstoneTheme(dynamicColor = false) {
+        SettingsScreen(
+            paddingValues      = PaddingValues(),
+            navController      = rememberNavController(),
+            outerNavController = rememberNavController()
+        )
+    }
 }

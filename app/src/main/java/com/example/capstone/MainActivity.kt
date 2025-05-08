@@ -1,6 +1,5 @@
 package com.example.capstone
 
-import Gaser
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
@@ -9,18 +8,25 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemColors
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -93,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            CapstoneTheme {
+            CapstoneTheme (dynamicColor = false) {
                 val startDestination = if (auth.currentUser != null) "main" else "auth"
                 NavHost(navController = navController, startDestination = startDestination) {
                     composable("auth") {
@@ -106,13 +112,13 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
     override fun onDestroy() {
         super.onDestroy()
         auth.removeAuthStateListener(authStateListener)
     }
 
 }
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,9 +139,9 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
             unselectedIcon = Icons.Outlined.Settings
         ),
         BottomNavItem(
-            title = "Profile",
-            selectedIcon = Icons.Filled.Person,
-            unselectedIcon = Icons.Outlined.Person
+            title = "Family",
+            selectedIcon = Icons.Filled.Home,
+            unselectedIcon = Icons.Outlined.Home
         )
     )
 
@@ -151,8 +157,8 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                 Text(text = "HOMSEC")
             },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(R.color.topBarColor),
-                    titleContentColor = androidx.compose.ui.graphics.Color.White
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
                     IconButton(onClick = {
@@ -183,7 +189,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                             if (selectedIndex == index) {
                                 Icon(
                                     imageVector = bottomNavItem.selectedIcon,
-                                    contentDescription = ""
+                                    contentDescription = "",
                                 )
                             } else {
                                 Icon(
@@ -194,7 +200,17 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                         },
                         label = {
                             Text(text = bottomNavItem.title)
-                        }
+                        },
+                        colors = NavigationBarItemColors(
+                            selectedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            unselectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            disabledIconColor = MaterialTheme.colorScheme.surfaceVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer
+
+                        )
                     )
                 }
             }
@@ -220,10 +236,10 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                     AlertsScreen(paddingValues, navController)
                 }
                 composable("settings") {
-                    SettingsScreen(
-                        paddingValues,
-                        outerNavController
-                    )
+                    SettingsScreen(paddingValues,
+                        navController,
+                        outerNavController)
+//                    Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {
                     FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
@@ -232,6 +248,9 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                     //addData()
                     Gaser(paddingValues, outerNavController) // Profile sayfası
                 }
+                composable("profileEdit") {
+                    ProfileEditScreen(paddingValues, navController)
+                }
             }
         }
 
@@ -239,7 +258,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
 }
 
 
-fun addData() {
+fun addData(){
     val db = Firebase.firestore
 
     val user = hashMapOf(

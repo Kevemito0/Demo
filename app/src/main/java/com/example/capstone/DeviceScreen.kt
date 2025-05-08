@@ -115,7 +115,7 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
                     .height(100.dp)
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+//                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -131,12 +131,7 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
                         fontWeight = FontWeight.Bold
                     )
 
-                    var isChecked by remember { mutableStateOf(true) }
 
-                    Switch(
-                        checked = isChecked,
-                        onCheckedChange = { isChecked = it }
-                    )
                 }
             }
         }
