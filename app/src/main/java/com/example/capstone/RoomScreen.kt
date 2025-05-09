@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -122,8 +124,70 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
             }
         }
 
-        // "+" Butonu
-      /*  item {
+        val buttons = listOf("Open the Door", "Open Gas Valve", "Close Gas Valve", "Close Alarm")
+
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(2f) // kare şeklinde yapar
+                        .padding(end = 8.dp)
+                        .clickable {
+                            // BURAYA FONKSİYON GELECEK
+                        },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = buttons[0],
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(2f)
+                        .padding(start = 8.dp)
+                        .clickable {
+                            // BURAYA FONKSİYON GELECEK
+                        },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = buttons[1],
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+
+
+            // "+" Butonu
+            /*  item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,14 +208,99 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                 }
             }
         }*/
+        }
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(2f) // kare şeklinde yapar
+                        .padding(end = 8.dp)
+                        .clickable {
+                            // BURAYA FONKSİYON GELECEK
+                        },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = buttons[2],
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(2f)
+                        .padding(start = 8.dp)
+                        .clickable {
+                            // BURAYA FONKSİYON GELECEK
+                        },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = buttons[3],
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+
+
+            // "+" Butonu
+            /*  item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(
+                    onClick = {
+                        navController.navigate("device/Livingroom")
+                        Log.d("RoomScreen", "Artı Butonuna tıklandı")
+                    },
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier
+                        .height(60.dp)
+                        .width(60.dp)
+                ) {
+                    Text(text = "+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }*/
+        }
+
     }
 }
 
 
-@Preview(showBackground = true)
+/*@Preview(showBackground = true)
 @Composable
 fun RoomScreenPreview() {
     CapstoneTheme {
         RoomScreen(paddingValues = PaddingValues(), navController = rememberNavController())
     }
-}
+}*/

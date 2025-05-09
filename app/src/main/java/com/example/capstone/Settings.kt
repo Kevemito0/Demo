@@ -2,6 +2,7 @@ package com.example.capstone
 
 import android.content.res.Configuration
 import android.provider.ContactsContract.Profile
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
+import java.util.Date
 
 fun logoutUser(onLoggedOut: () -> Unit) {
     FirebaseAuth.getInstance().signOut()
@@ -70,7 +74,8 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues).background(MaterialTheme.colorScheme.background),
+            .padding(paddingValues)
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Column {
@@ -88,15 +93,20 @@ fun SettingsScreen(
                 shape = MaterialTheme.shapes.medium,
 //                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column (
+                Column(
                     modifier = Modifier.background(color = MaterialTheme.colorScheme.secondary)
-                ){
+                ) {
                     // Profile
                     ListItem(
                         modifier = Modifier
                             .clickable { navController.navigate("profileEdit") }
                             .padding(horizontal = 16.dp),
-                        leadingContent = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "Profile"
+                            )
+                        },
                         headlineContent = { Text("Profile") },
                         supportingContent = { Text("Edit your profile information") },
                         colors = ListItemColors
@@ -149,6 +159,198 @@ fun SettingsScreen(
             }
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val userId = currentUser?.uid
+        val firestore = Firebase.firestore
+
+        var familyId by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(Unit) {
+            userId?.let {
+                firestore.collection("UsersTest")
+                    .document(it)
+                    .get()
+                    .addOnSuccessListener { document ->
+                        familyId = document.getString("familyId")
+                        Log.d("RoomScreen", "FamilyID: $familyId")
+                    }
+            }
+        }
+
+
+
+        Button(
+            onClick = {
+                familyId?.let { fid ->
+                    val roomsMap = mapOf(
+                        "0" to "Bedroom",
+                        "1" to "Livingroom",
+                        "2" to "Balcony",
+                        "3" to "Diningroom"
+                    )
+
+                    firestore.collection("Rooms")
+                        .document(fid)
+                        .set(roomsMap)
+                        .addOnSuccessListener {
+                            Log.d(
+                                "SettingsScreen",
+                                "Room document created successfully for familyId: $fid"
+                            )
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("SettingsScreen", "Error creating room document", e)
+                        }
+
+                    val roomsRef = firestore.collection("Rooms").document(fid)
+
+                    val roomDevicesMap = mapOf(
+                        "Bedroom" to listOf("Motion Sensor"),
+                        "Livingroom" to listOf("Gas Sensor", "Heat Sensor")
+                    )
+
+                    roomDevicesMap.forEach { (roomName, devices) ->
+                        val roomCollection = roomsRef.collection(roomName)
+
+                        devices.forEach { deviceName ->
+                            val deviceData = hashMapOf("Device" to deviceName)
+                            roomCollection.add(deviceData)
+                        }
+                    }
+
+                    val currentTime = Date()
+
+                    var userIdFromDoc: String
+
+                    userId?.let { uid ->
+                        firestore.collection("UsersTest")
+                            .document(uid)
+                            .get()
+                            .addOnSuccessListener { document ->
+                                userIdFromDoc = document.getString("userId") ?: ""
+
+                                val userInfo = mapOf(
+                                    "createdAt" to currentTime,
+                                    "familyName" to "HAMILTON",
+                                    "ownerId" to userIdFromDoc
+                                )
+
+                                firestore.collection("Families")
+                                    .document(fid)
+                                    .set(userInfo)
+                                    .addOnSuccessListener {
+                                        Log.d(
+                                            "SettingsScreen",
+                                            "Family document created successfully for familyId: $fid"
+                                        )
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.e("SettingsScreen", "Error creating family document", e)
+                                    }
+
+
+                            }
+
+
+
+
+                        userId?.let { uid ->
+                            firestore.collection("UsersTest")
+                                .document(uid)
+                                .get()
+                                .addOnSuccessListener { document ->
+                                    val email = document.getString("E-Mail") ?: ""
+                                    val name = document.getString("User Name") ?: ""
+                                    val userIdFromDoc = document.getString("userId") ?: ""
+
+                                    val membersInfos = mapOf(
+                                        "email" to email,
+                                        "joinedAt" to currentTime,
+                                        "name" to name,
+                                        "role" to "Admin",
+                                        "userId" to userIdFromDoc
+                                    )
+
+                                    val familyId = document.getString("familyId")
+                                        ?: return@addOnSuccessListener
+
+                                    // Şimdi bilgileri ilgili aile koleksiyonunun altına kaydet
+                                    firestore.collection("Families")
+                                        .document(familyId)
+                                        .collection("members")
+                                        .document(uid)
+                                        .set(membersInfos)
+                                        .addOnSuccessListener {
+                                            Log.d(
+                                                "Firestore",
+                                                "Kullanıcı üyeler koleksiyonuna başarıyla eklendi."
+                                            )
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.e("Firestore", "Üye eklenirken hata oluştu", e)
+                                        }
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("UserInfo", "Kullanıcı bilgileri alınamadı", e)
+                                }
+                        }
+
+                    }
+
+
+                }
+
+
+
+
+
+
+
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            )
+        ) {
+            Icon(Icons.Default.ExitToApp, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Create Family", style = MaterialTheme.typography.titleMedium)
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         // Logout button
         Button(
             onClick = {
@@ -178,54 +380,54 @@ fun MySwitch() {
     var isChecked by remember { mutableStateOf(true) }
 
     Switch(
-        checked         = isChecked,
+        checked = isChecked,
         onCheckedChange = { isChecked = it },
-        thumbContent    = {
+        thumbContent = {
             if (isChecked) {
                 Icon(
-                    imageVector     = Icons.Default.Check,
+                    imageVector = Icons.Default.Check,
                     contentDescription = "Checked",
-                    modifier        = Modifier.size(SwitchDefaults.IconSize)
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
                 )
             }
         },
         // optional: you can tweak the track/thumb colors too
         colors = SwitchDefaults.colors(
-            checkedTrackColor   = Color(0xFF198817),
+            checkedTrackColor = Color(0xFF198817),
             uncheckedTrackColor = Color(0xFF424242),
-            checkedThumbColor   = Color(0xFF10B90E),
+            checkedThumbColor = Color(0xFF10B90E),
             uncheckedThumbColor = Color(0x8D000000)
         )
     )
 }
 
 @Preview(
-    name       = "Settings • Light",
+    name = "Settings • Light",
     showBackground = true,
-    uiMode     = Configuration.UI_MODE_NIGHT_NO
+    uiMode = Configuration.UI_MODE_NIGHT_NO
 )
 @Composable
 fun PreviewSettingsLight() {
     CapstoneTheme(dynamicColor = false) {
         SettingsScreen(
-            paddingValues      = PaddingValues(),
-            navController      = rememberNavController(),
+            paddingValues = PaddingValues(),
+            navController = rememberNavController(),
             outerNavController = rememberNavController()
         )
     }
 }
 
 @Preview(
-    name       = "Settings • Dark",
+    name = "Settings • Dark",
     showBackground = true,
-    uiMode     = Configuration.UI_MODE_NIGHT_YES
+    uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 fun PreviewSettingsDark() {
     CapstoneTheme(dynamicColor = false) {
         SettingsScreen(
-            paddingValues      = PaddingValues(),
-            navController      = rememberNavController(),
+            paddingValues = PaddingValues(),
+            navController = rememberNavController(),
             outerNavController = rememberNavController()
         )
     }
