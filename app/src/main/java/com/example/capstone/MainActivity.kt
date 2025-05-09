@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAlert
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Message
@@ -160,7 +161,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                         Log.d("Message", "Clicked")
                         navController.navigate("alertScreen")
                     }) {
-                        Icon(imageVector = Icons.Filled.Message, contentDescription = "")
+                        Icon(imageVector = Icons.Filled.AddAlert, contentDescription = "")
                     }
                 }
             )
