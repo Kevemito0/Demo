@@ -160,24 +160,6 @@ fun SettingsScreen(
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         val currentUser = FirebaseAuth.getInstance().currentUser
         val userId = currentUser?.uid
         val firestore = Firebase.firestore
@@ -199,6 +181,9 @@ fun SettingsScreen(
 
         Button(
             onClick = {
+
+
+                //Rooms Ekranını ayarlıyor
                 familyId?.let { fid ->
                     val roomsMap = mapOf(
                         "0" to "Bedroom",
@@ -236,16 +221,16 @@ fun SettingsScreen(
                         }
                     }
 
-                    val currentTime = Date()
 
-                    var userIdFromDoc: String
+                    //Families Ekranını Ayarlıyor
+                    val currentTime = Date()
 
                     userId?.let { uid ->
                         firestore.collection("UsersTest")
                             .document(uid)
                             .get()
                             .addOnSuccessListener { document ->
-                                userIdFromDoc = document.getString("userId") ?: ""
+                                val userIdFromDoc = document.getString("userId") ?: ""
 
                                 val userInfo = mapOf(
                                     "createdAt" to currentTime,
@@ -289,12 +274,8 @@ fun SettingsScreen(
                                         "userId" to userIdFromDoc
                                     )
 
-                                    val familyId = document.getString("familyId")
-                                        ?: return@addOnSuccessListener
-
-                                    // Şimdi bilgileri ilgili aile koleksiyonunun altına kaydet
                                     firestore.collection("Families")
-                                        .document(familyId)
+                                        .document(fid)
                                         .collection("members")
                                         .document(uid)
                                         .set(membersInfos)
@@ -319,11 +300,6 @@ fun SettingsScreen(
                 }
 
 
-
-
-
-
-
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -337,18 +313,6 @@ fun SettingsScreen(
             Spacer(Modifier.width(8.dp))
             Text("Create Family", style = MaterialTheme.typography.titleMedium)
         }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         // Logout button
