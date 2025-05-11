@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -178,11 +179,19 @@ fun SettingsScreen(
         }
 
 
+        var familyName by remember { mutableStateOf("") }
+
+        OutlinedTextField(
+            value = familyName,
+            onValueChange = { familyName = it },
+            label = { Text("Enter Your Family Name") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
 
         Button(
             onClick = {
-
-
                 //Rooms Ekranını ayarlıyor
                 familyId?.let { fid ->
                     val roomsMap = mapOf(
@@ -234,7 +243,7 @@ fun SettingsScreen(
 
                                 val userInfo = mapOf(
                                     "createdAt" to currentTime,
-                                    "familyName" to "HAMILTON",
+                                    "familyName" to familyName,
                                     "ownerId" to userIdFromDoc
                                 )
 
@@ -253,9 +262,6 @@ fun SettingsScreen(
 
 
                             }
-
-
-
 
                         userId?.let { uid ->
                             firestore.collection("UsersTest")
@@ -293,13 +299,8 @@ fun SettingsScreen(
                                     Log.e("UserInfo", "Kullanıcı bilgileri alınamadı", e)
                                 }
                         }
-
                     }
-
-
                 }
-
-
             },
             modifier = Modifier
                 .fillMaxWidth()

@@ -106,7 +106,6 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                         navController.navigate("device/${room.name}")
                     },
                 shape = RoundedCornerShape(16.dp),
-//                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -124,7 +123,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
             }
         }
 
-        val buttons = listOf("Open the Door", "Open Gas Valve", "Close Gas Valve", "Close Alarm")
+        val buttons = listOf("Open the Door", "Close Alarm", "Open Gas Valve", "Close Gas Valve")
 
         item {
             Row(
@@ -297,10 +296,13 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
 }
 
 
-/*@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun RoomScreenPreview() {
     CapstoneTheme {
-        RoomScreen(paddingValues = PaddingValues(), navController = rememberNavController())
+        RoomScreen(
+            navController = rememberNavController(),
+            paddingValues = PaddingValues(0.dp)
+        )
     }
-}*/
+}

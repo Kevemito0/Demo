@@ -17,13 +17,17 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.util.Date
 import java.util.UUID
 
 data class FamilyMember(
@@ -277,6 +281,7 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(16.dp))
+
         Button(
             onClick = {
                 isLoading = true
@@ -286,39 +291,69 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                     .get()
                     .addOnSuccessListener { result ->
                         if (result.isEmpty) {
-                            Toast.makeText(context, "Code is invalid or used", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Code is invalid or already used", Toast.LENGTH_SHORT).show()
                             isLoading = false
                             return@addOnSuccessListener
                         }
+
                         val inviteDoc = result.documents[0]
                         val newFamilyId = inviteDoc.getString("familyId") ?: return@addOnSuccessListener
+                        val inviteId = inviteDoc.id
 
-                        // Farklı aile ise onay sor
-                        if (oldFamilyId != null && oldFamilyId != newFamilyId) {
-                            pendingFamilyId = newFamilyId
-                            firestore.collection("Families").document(oldFamilyId!!)
-                                .get()
-                                .addOnSuccessListener { famDoc ->
-                                    oldFamilyName = famDoc.getString("familyName")
-                                    showConfirmDialog = true
-                                    isLoading = false
-                                }
-                        } else {
-                            // Aynı aile ya da ilk katılım
-                            joinFamily(userId, newFamilyId, inviteDoc.id, context) { isLoading = false }
-                        }
+                        // Kullanıcıyı UsersTest'ten çek
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@addOnSuccessListener
+                        firestore.collection("UsersTest")
+                            .document(userId)
+                            .get()
+                            .addOnSuccessListener { userDoc ->
+                                val userEmail = userDoc.getString("email") ?: ""
+                                val userName = userDoc.getString("User Name") ?: ""
+
+                                // 1. Kullanıcının familyId'sini güncelle
+                                firestore.collection("UsersTest").document(userId)
+                                    .update("familyId", newFamilyId)
+
+                                // 2. Families → {familyId} → members → {userId}
+                                val currentTime = Date()
+                                val memberInfo = mapOf(
+                                    "email" to userEmail,
+                                    "name" to userName,
+                                    "joinedAt" to currentTime,
+                                    "role" to "Member",
+                                    "userId" to userId
+                                )
+                                firestore.collection("Families")
+                                    .document(newFamilyId)
+                                    .collection("members")
+                                    .document(userId)
+                                    .set(memberInfo)
+
+                                // 3. invite isUsed = true
+                                firestore.collection("invites").document(inviteId)
+                                    .update("isUsed", true)
+
+                                Toast.makeText(context, "Joined successfully!", Toast.LENGTH_SHORT).show()
+                                isLoading = false
+                            }
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
+                        isLoading = false
                     }
             },
-            modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading,
+            modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            contentColor = MaterialTheme.colorScheme.onSecondary
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
             )
         ) {
-            if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(end = 8.dp))
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp).padding(end = 8.dp))
+            }
             Text("Join")
         }
+
     }
 
     if (showConfirmDialog && pendingFamilyId != null) {
@@ -589,3 +624,12 @@ fun EditFamilyNameDialog(
         }
     )
 }
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun GaserPreview() {
+    CapstoneTheme {
+        Gaser(paddingValues = PaddingValues(), navController = rememberNavController())
+    }
+}
+
