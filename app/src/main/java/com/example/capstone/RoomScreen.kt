@@ -40,6 +40,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.capstone.ui.theme.CapstoneTheme
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.firestore
 
 
@@ -54,7 +55,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
 
     var familyId by remember { mutableStateOf<String?>(null) }
     var rooms by remember { mutableStateOf<List<RoomItem>>(emptyList()) }
-
+    val komutRef = FirebaseDatabase.getInstance().getReference("komut")
 
     // Firestore'dan familyId'yi al
 
@@ -138,6 +139,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                         .aspectRatio(2f) // kare şeklinde yapar
                         .padding(end = 8.dp)
                         .clickable {
+                            komutRef.setValue("kapi_ac")
                             // BURAYA FONKSİYON GELECEK
                         },
                     shape = RoundedCornerShape(16.dp)
@@ -163,6 +165,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                         .aspectRatio(2f)
                         .padding(start = 8.dp)
                         .clickable {
+                            komutRef.setValue("buzzer_kapat")
                             // BURAYA FONKSİYON GELECEK
                         },
                     shape = RoundedCornerShape(16.dp)
@@ -222,6 +225,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                         .padding(end = 8.dp)
                         .clickable {
                             // BURAYA FONKSİYON GELECEK
+                            komutRef.setValue("vana_ac")
                         },
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -246,6 +250,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                         .aspectRatio(2f)
                         .padding(start = 8.dp)
                         .clickable {
+                            komutRef.setValue("vana_kapat")
                             // BURAYA FONKSİYON GELECEK
                         },
                     shape = RoundedCornerShape(16.dp)

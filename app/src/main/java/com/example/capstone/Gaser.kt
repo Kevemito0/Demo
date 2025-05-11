@@ -44,8 +44,7 @@ data class FamilyMember(
 @Composable
 fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
-    val tabs = listOf("Invitation Code", "Join to Family", "Family")
+    val tabs = listOf("Family", "Join to Family", "Invitation Code")
 
     Scaffold(
         topBar = {
@@ -69,9 +68,9 @@ fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
                         icon = {
                             Icon(
                                 imageVector = when (index) {
-                                    0 -> Icons.Default.Key
+                                    0 -> Icons.Default.Home
                                     1 -> Icons.Default.Person
-                                    else -> Icons.Default.Home
+                                    else -> Icons.Default.Key
                                 },
                                 contentDescription = title
                             )
@@ -81,9 +80,9 @@ fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
             }
 
             when (selectedTabIndex) {
-                0 -> InviteGenerationScreen()
+                0 -> FamilyMemberListScreen(navController)
                 1 -> JoinWithInviteCodeScreen(navController)
-                2 -> FamilyMemberListScreen(navController)
+                2 -> InviteGenerationScreen()
             }
         }
     }
@@ -177,7 +176,7 @@ fun InviteGenerationScreen() {
             )
             Text("Generate Invitation Code")
         }
-        HardwareCommandButtons()
+//        HardwareCommandButtons()
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -202,60 +201,60 @@ fun InviteGenerationScreen() {
     }
 }
 
-@Composable
-fun HardwareCommandButtons() {
-    // Firebase RealtimeDB’de "komut" yoluna referans
-    val komutRef = FirebaseDatabase.getInstance().getReference("komut")
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Button(
-            onClick = { komutRef.setValue("kapi_ac") }, colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            )
-        ) {
-            Text("Kapı Aç")
-        }
-        Button(
-            onClick = { komutRef.setValue("kamera_foto") }, colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            )
-        ) {
-            Text("Fotoğraf Çek")
-        }
-        Button(
-            onClick = { komutRef.setValue("vana_ac") }, colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            )
-        ) {
-            Text("Gaz Vanasını Aç")
-        }
-        Button(
-            onClick = { komutRef.setValue("vana_kapat") }, colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            )
-        ) {
-            Text("Gaz Vanasını Kapat")
-        }
-        Button(
-            onClick = { komutRef.setValue("buzzer_kapat") },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            )
-        ) {
-            Text("Buzzer'ı Kapat")
-        }
-    }
-}
+//@Composable
+//fun HardwareCommandButtons() {
+//    // Firebase RealtimeDB’de "komut" yoluna referans
+//    val komutRef = FirebaseDatabase.getInstance().getReference("komut")
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(16.dp),
+//        verticalArrangement = Arrangement.spacedBy(12.dp)
+//    ) {
+//        Button(
+//            onClick = { komutRef.setValue("kapi_ac") }, colors = ButtonDefaults.buttonColors(
+//                containerColor = MaterialTheme.colorScheme.secondary,
+//                contentColor = MaterialTheme.colorScheme.onSecondary
+//            )
+//        ) {
+//            Text("Kapı Aç")
+//        }
+//        Button(
+//            onClick = { komutRef.setValue("kamera_foto") }, colors = ButtonDefaults.buttonColors(
+//                containerColor = MaterialTheme.colorScheme.secondary,
+//                contentColor = MaterialTheme.colorScheme.onSecondary
+//            )
+//        ) {
+//            Text("Fotoğraf Çek")
+//        }
+//        Button(
+//            onClick = { komutRef.setValue("vana_ac") }, colors = ButtonDefaults.buttonColors(
+//                containerColor = MaterialTheme.colorScheme.secondary,
+//                contentColor = MaterialTheme.colorScheme.onSecondary
+//            )
+//        ) {
+//            Text("Gaz Vanasını Aç")
+//        }
+//        Button(
+//            onClick = { komutRef.setValue("vana_kapat") }, colors = ButtonDefaults.buttonColors(
+//                containerColor = MaterialTheme.colorScheme.secondary,
+//                contentColor = MaterialTheme.colorScheme.onSecondary
+//            )
+//        ) {
+//            Text("Gaz Vanasını Kapat")
+//        }
+//        Button(
+//            onClick = { komutRef.setValue("buzzer_kapat") },
+//            colors = ButtonDefaults.buttonColors(
+//                containerColor = MaterialTheme.colorScheme.secondary,
+//                contentColor = MaterialTheme.colorScheme.onSecondary
+//            )
+//        ) {
+//            Text("Buzzer'ı Kapat")
+//        }
+//    }
+//}
 
 @Composable
 fun JoinWithInviteCodeScreen(navController: NavHostController) {
@@ -327,6 +326,9 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                                 // 1. Kullanıcının familyId'sini güncelle
                                 firestore.collection("UsersTest").document(userId)
                                     .update("familyId", newFamilyId)
+//                                firestore.collection("UsersTest").document(userId)
+//                                    .update("inFamily",true)
+
 
                                 // 2. Families → {familyId} → members → {userId}
                                 val currentTime = Date()
