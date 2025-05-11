@@ -121,25 +121,7 @@ fun InviteGenerationScreen() {
                                 }
                             val familyRef = firestore.collection("Families").document(familyId)
                             familyRef.get().addOnSuccessListener { famDoc ->
-                                if (!famDoc.exists()) {
-                                    familyRef.set(
-                                        mapOf(
-                                            "ownerId" to userId,
-                                            "createdAt" to FieldValue.serverTimestamp()
-                                        )
-                                    )
-                                }
-                                famDoc.reference.collection("members")
-                                    .document(userId)
-                                    .set(
-                                        mapOf(
-                                            "userId" to userId,
-                                            "name" to userDoc.getString("User Name").orEmpty(),
-                                            "email" to userDoc.getString("E-Mail").orEmpty(),
-                                            "joinedAt" to FieldValue.serverTimestamp(),
-                                            "role" to "admin"
-                                        )
-                                    )
+
                                 val code = (100000..999999).random().toString()
                                 inviteCode = code
                                 firestore.collection("invites")
