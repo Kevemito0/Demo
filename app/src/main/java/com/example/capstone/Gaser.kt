@@ -288,7 +288,7 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                             .document(userId)
                             .get()
                             .addOnSuccessListener { userDoc ->
-                                val userEmail = userDoc.getString("email") ?: ""
+                                val userEmail = userDoc.getString("E-Mail") ?: ""
                                 val userName = userDoc.getString("User Name") ?: ""
 
                                 // 1. Kullanıcının familyId'sini güncelle
