@@ -56,9 +56,7 @@ fun logoutUser(onLoggedOut: () -> Unit) {
 
 @Composable
 fun SettingsScreen(
-    paddingValues: PaddingValues,
-    navController: NavController,
-    outerNavController: NavController
+    paddingValues: PaddingValues, navController: NavController, outerNavController: NavController
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var ListItemColors = ListItemColors(
@@ -98,14 +96,12 @@ fun SettingsScreen(
                     modifier = Modifier.background(color = MaterialTheme.colorScheme.secondary)
                 ) {
                     // Profile
-                    ListItem(
-                        modifier = Modifier
-                            .clickable { navController.navigate("profileEdit") }
-                            .padding(horizontal = 16.dp),
+                    ListItem(modifier = Modifier
+                        .clickable { navController.navigate("profileEdit") }
+                        .padding(horizontal = 16.dp),
                         leadingContent = {
                             Icon(
-                                Icons.Default.Person,
-                                contentDescription = "Profile"
+                                Icons.Default.Person, contentDescription = "Profile"
                             )
                         },
                         headlineContent = { Text("Profile") },
@@ -116,21 +112,16 @@ fun SettingsScreen(
                     Divider(color = Color(0xFA313131))
 
                     // Notifications toggle
-                    ListItem(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications"
-                            )
-                        },
-                        headlineContent = {
-                            Text("Notifications")
-                        },
-                        trailingContent = {
-                            MySwitch()
-                        },
-                        colors = ListItemColors
+                    ListItem(modifier = Modifier.padding(horizontal = 16.dp), leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications"
+                        )
+                    }, headlineContent = {
+                        Text("Notifications")
+                    }, trailingContent = {
+                        MySwitch()
+                    }, colors = ListItemColors
                     )
 
                     Divider(
@@ -138,23 +129,17 @@ fun SettingsScreen(
                     )
 
                     // About
-                    ListItem(
-                        modifier = Modifier
-                            .clickable { /* navController.navigate("about") */ }
-                            .padding(horizontal = 16.dp),
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = "About"
-                            )
-                        },
-                        headlineContent = {
-                            Text("About")
-                        },
-                        supportingContent = {
-                            Text("Version 1.0.0")
-                        },
-                        colors = ListItemColors
+                    ListItem(modifier = Modifier
+                        .clickable { /* navController.navigate("about") */ }
+                        .padding(horizontal = 16.dp), leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Info, contentDescription = "About"
+                        )
+                    }, headlineContent = {
+                        Text("About")
+                    }, supportingContent = {
+                        Text("Version 1.0.0")
+                    }, colors = ListItemColors
                     )
                 }
             }
@@ -166,13 +151,14 @@ fun SettingsScreen(
         val firestore = Firebase.firestore
 
         var familyId by remember { mutableStateOf<String?>(null) }
+        var inFamily by remember { mutableStateOf(false) }
+
         LaunchedEffect(Unit) {
             userId?.let {
-                firestore.collection("UsersTest")
-                    .document(it)
-                    .get()
+                firestore.collection("UsersTest").document(it).get()
                     .addOnSuccessListener { document ->
                         familyId = document.getString("familyId")
+                        inFamily = document.getBoolean("inFamily") == true
                         Log.d("RoomScreen", "FamilyID: $familyId")
                     }
             }
@@ -180,139 +166,132 @@ fun SettingsScreen(
 
 
         var familyName by remember { mutableStateOf("") }
+        if (!inFamily) {
+            OutlinedTextField(value = familyName,
+                onValueChange = { familyName = it },
+                label = { Text("Enter Your Family Name") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
 
-        OutlinedTextField(
-            value = familyName,
-            onValueChange = { familyName = it },
-            label = { Text("Enter Your Family Name") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        )
+            Button(
+                onClick = {
+                    //Rooms Ekranını ayarlıyor
+                    familyId?.let { fid ->
+                        val roomsMap = mapOf(
+                            "0" to "Bedroom",
+                            "1" to "Livingroom",
+                            "2" to "Balcony",
+                            "3" to "Diningroom"
+                        )
 
-        Button(
-            onClick = {
-                //Rooms Ekranını ayarlıyor
-                familyId?.let { fid ->
-                    val roomsMap = mapOf(
-                        "0" to "Bedroom",
-                        "1" to "Livingroom",
-                        "2" to "Balcony",
-                        "3" to "Diningroom"
-                    )
-
-                    firestore.collection("Rooms")
-                        .document(fid)
-                        .set(roomsMap)
-                        .addOnSuccessListener {
-                            Log.d(
-                                "SettingsScreen",
-                                "Room document created successfully for familyId: $fid"
-                            )
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("SettingsScreen", "Error creating room document", e)
-                        }
-
-                    val roomsRef = firestore.collection("Rooms").document(fid)
-
-                    val roomDevicesMap = mapOf(
-                        "Bedroom" to listOf("Motion Sensor"),
-                        "Livingroom" to listOf("Gas Sensor", "Heat Sensor")
-                    )
-
-                    roomDevicesMap.forEach { (roomName, devices) ->
-                        val roomCollection = roomsRef.collection(roomName)
-
-                        devices.forEach { deviceName ->
-                            val deviceData = hashMapOf("Device" to deviceName)
-                            roomCollection.add(deviceData)
-                        }
-                    }
-
-
-                    //Families Ekranını Ayarlıyor
-                    val currentTime = Date()
-
-                    userId?.let { uid ->
-                        firestore.collection("UsersTest")
-                            .document(uid)
-                            .get()
-                            .addOnSuccessListener { document ->
-                                val userIdFromDoc = document.getString("userId") ?: ""
-
-                                val userInfo = mapOf(
-                                    "createdAt" to currentTime,
-                                    "familyName" to familyName,
-                                    "ownerId" to userIdFromDoc
+                        firestore.collection("Rooms").document(fid).set(roomsMap)
+                            .addOnSuccessListener {
+                                Log.d(
+                                    "SettingsScreen",
+                                    "Room document created successfully for familyId: $fid"
                                 )
-
-                                firestore.collection("Families")
-                                    .document(fid)
-                                    .set(userInfo)
-                                    .addOnSuccessListener {
-                                        Log.d(
-                                            "SettingsScreen",
-                                            "Family document created successfully for familyId: $fid"
-                                        )
-                                    }
-                                    .addOnFailureListener { e ->
-                                        Log.e("SettingsScreen", "Error creating family document", e)
-                                    }
-
-
+                            }.addOnFailureListener { e ->
+                                Log.e("SettingsScreen", "Error creating room document", e)
                             }
 
+                        val roomsRef = firestore.collection("Rooms").document(fid)
+
+                        val roomDevicesMap = mapOf(
+                            "Bedroom" to listOf("Motion Sensor"),
+                            "Livingroom" to listOf("Gas Sensor", "Heat Sensor")
+                        )
+
+                        roomDevicesMap.forEach { (roomName, devices) ->
+                            val roomCollection = roomsRef.collection(roomName)
+
+                            devices.forEach { deviceName ->
+                                val deviceData = hashMapOf("Device" to deviceName)
+                                roomCollection.add(deviceData)
+                            }
+                        }
+
+
+                        //Families Ekranını Ayarlıyor
+                        val currentTime = Date()
+
                         userId?.let { uid ->
-                            firestore.collection("UsersTest")
-                                .document(uid)
-                                .get()
+                            firestore.collection("UsersTest").document(uid).get()
                                 .addOnSuccessListener { document ->
-                                    val email = document.getString("E-Mail") ?: ""
-                                    val name = document.getString("User Name") ?: ""
                                     val userIdFromDoc = document.getString("userId") ?: ""
 
-                                    val membersInfos = mapOf(
-                                        "email" to email,
-                                        "joinedAt" to currentTime,
-                                        "name" to name,
-                                        "role" to "Admin",
-                                        "userId" to userIdFromDoc
+                                    val userInfo = mapOf(
+                                        "createdAt" to currentTime,
+                                        "familyName" to familyName,
+                                        "ownerId" to userIdFromDoc
                                     )
 
-                                    firestore.collection("Families")
-                                        .document(fid)
-                                        .collection("members")
-                                        .document(uid)
-                                        .set(membersInfos)
+                                    firestore.collection("Families").document(fid).set(userInfo)
                                         .addOnSuccessListener {
                                             Log.d(
-                                                "Firestore",
-                                                "Kullanıcı üyeler koleksiyonuna başarıyla eklendi."
+                                                "SettingsScreen",
+                                                "Family document created successfully for familyId: $fid"
+                                            )
+                                        }.addOnFailureListener { e ->
+                                            Log.e(
+                                                "SettingsScreen",
+                                                "Error creating family document",
+                                                e
                                             )
                                         }
-                                        .addOnFailureListener { e ->
-                                            Log.e("Firestore", "Üye eklenirken hata oluştu", e)
-                                        }
+
+
                                 }
-                                .addOnFailureListener { e ->
-                                    Log.e("UserInfo", "Kullanıcı bilgileri alınamadı", e)
-                                }
+
+                            userId?.let { uid ->
+                                firestore.collection("UsersTest").document(uid).get()
+                                    .addOnSuccessListener { document ->
+                                        val email = document.getString("E-Mail") ?: ""
+                                        val name = document.getString("User Name") ?: ""
+                                        val userIdFromDoc = document.getString("userId") ?: ""
+
+                                        val membersInfos = mapOf(
+                                            "email" to email,
+                                            "joinedAt" to currentTime,
+                                            "name" to name,
+                                            "role" to "Admin",
+                                            "userId" to userIdFromDoc
+                                        )
+
+                                        firestore.collection("UsersTest").document(userId)
+                                            .update("inFamily", true)
+
+
+                                        firestore.collection("Families").document(fid)
+                                            .collection("members").document(uid).set(membersInfos)
+                                            .addOnSuccessListener {
+                                                Log.d(
+                                                    "Firestore",
+                                                    "Kullanıcı üyeler koleksiyonuna başarıyla eklendi."
+                                                )
+                                            }.addOnFailureListener { e ->
+                                                Log.e("Firestore", "Üye eklenirken hata oluştu", e)
+                                            }
+                                    }.addOnFailureListener { e ->
+                                        Log.e("UserInfo", "Kullanıcı bilgileri alınamadı", e)
+                                    }
+                            }
                         }
                     }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError
-            )
-        ) {
-            Icon(Icons.Default.ExitToApp, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Create Family", style = MaterialTheme.typography.titleMedium)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Create Family", style = MaterialTheme.typography.titleMedium)
+            }
         }
 
 
@@ -344,18 +323,15 @@ fun SettingsScreen(
 fun MySwitch() {
     var isChecked by remember { mutableStateOf(true) }
 
-    Switch(
-        checked = isChecked,
-        onCheckedChange = { isChecked = it },
-        thumbContent = {
-            if (isChecked) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Checked",
-                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                )
-            }
-        },
+    Switch(checked = isChecked, onCheckedChange = { isChecked = it }, thumbContent = {
+        if (isChecked) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Checked",
+                modifier = Modifier.size(SwitchDefaults.IconSize)
+            )
+        }
+    },
         // optional: you can tweak the track/thumb colors too
         colors = SwitchDefaults.colors(
             checkedTrackColor = Color(0xFF198817),
@@ -367,9 +343,7 @@ fun MySwitch() {
 }
 
 @Preview(
-    name = "Settings • Light",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_NO
+    name = "Settings • Light", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO
 )
 @Composable
 fun PreviewSettingsLight() {
@@ -383,9 +357,7 @@ fun PreviewSettingsLight() {
 }
 
 @Preview(
-    name = "Settings • Dark",
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
+    name = "Settings • Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 fun PreviewSettingsDark() {

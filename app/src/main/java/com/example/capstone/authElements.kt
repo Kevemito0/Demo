@@ -591,7 +591,8 @@ fun registerUser(
                         "E-Mail"    to email,
                         "Password"  to hashPassword(password),
                         "userId"    to userId,
-                        "familyId"  to randomFamilyId
+                        "familyId"  to randomFamilyId,
+                        "inFamily" to false
                     )
                     db.collection("UsersTest").document(userId)
                         .set(user)
