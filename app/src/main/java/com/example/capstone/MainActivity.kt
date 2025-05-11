@@ -18,11 +18,16 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemColors
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -95,7 +100,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            CapstoneTheme {
+            CapstoneTheme (dynamicColor = false) {
                 val startDestination = if (auth.currentUser != null) "main" else "auth"
                 NavHost(navController = navController, startDestination = startDestination) {
                     composable("auth") {
@@ -153,8 +158,8 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                 Text(text = "HOMSEC")
             },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(R.color.topBarColor),
-                    titleContentColor = androidx.compose.ui.graphics.Color.White
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
                     IconButton(onClick = {
@@ -185,7 +190,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                             if (selectedIndex == index) {
                                 Icon(
                                     imageVector = bottomNavItem.selectedIcon,
-                                    contentDescription = ""
+                                    contentDescription = "",
                                 )
                             } else {
                                 Icon(
@@ -196,7 +201,17 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                         },
                         label = {
                             Text(text = bottomNavItem.title)
-                        }
+                        },
+                        colors = NavigationBarItemColors(
+                            selectedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            unselectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            disabledIconColor = MaterialTheme.colorScheme.surfaceVariant,
+                            disabledTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer
+
+                        )
                     )
                 }
             }

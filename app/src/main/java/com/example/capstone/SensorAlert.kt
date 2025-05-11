@@ -6,6 +6,6 @@ class SensorAlert (
     val doorLock: Boolean,
     val gas: Boolean,
     val motion: Boolean,
-    val temperature: Int,
+    val temperature: Boolean,
     val timestamp: Date
 )

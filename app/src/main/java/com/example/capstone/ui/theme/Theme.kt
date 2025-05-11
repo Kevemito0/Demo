@@ -19,52 +19,54 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 
-//
-//private val DarkColorScheme = darkColorScheme(
-//    primary = Purple80,
-//    secondary = PurpleGrey80,
-//    tertiary = Pink80
-//)
-//
-//private val LightColorScheme = lightColorScheme(
-//    primary = Purple40,
-//    secondary = PurpleGrey40,
-//    tertiary = Pink40
-//
-//    /* Other default colors to override
-//    background = Color(0xFFFFFBFE),
-//    surface = Color(0xFFFFFBFE),
-//    onPrimary = Color.White,
-//    onSecondary = Color.White,
-//    onTertiary = Color.White,
-//    onBackground = Color(0xFF1C1B1F),
-//    onSurface = Color(0xFF1C1B1F),
-//    */
-//)
 
 private val LightColorScheme = lightColorScheme(
-    primary        = Color(0xFF6750A4),
+    primary        = Color(0xFF000000),
     onPrimary      = Color.White,
-    secondary      = Color(0xFF625B71),
-    onSecondary    = Color.White,
-    background     = Color(0xFFFFFBFE),
-    onBackground  = Color(0xFF1C1B1F),
-    surface        = Color(0xFFFFFBFE),
-    onSurface      = Color(0xFF1C1B1F),
-    // …other roles: error, outline, etc.
+    primaryContainer   = Color(0xFFDDE4FF),
+    onPrimaryContainer = Color(0xFF173B69),
+
+    secondary      = Color(0x97A4B8FD),
+    onSecondary    = Color.Black,
+    secondaryContainer   = Color(0xFFAAFFF9),
+    onSecondaryContainer = Color(0xFF00201A),
+
+    background     = Color(0xFFEFEFEF),
+    onBackground   = Color.Black,
+    surface        = Color.White,
+    onSurface      = Color.Black,
+    surfaceVariant = Color(0x1B757575),
+
+    error          = Color(0xFFB00020),
+    onError        = Color.White,
+    errorContainer    = Color(0xFFFFDAD4),
+    onErrorContainer  = Color(0xFF410002)
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary        = Color(0xFFD0BCFF),
-    onPrimary      = Color(0xFF381E72),
-    secondary      = Color(0xFFEEA5BA),
-    onSecondary    = Color(0xFF492532),
+    primary        = Color(0xFFFFFFFF),
+    onPrimary      = Color(0xFFEFEFEF),
+    primaryContainer   = Color(0xFF4F378B),
+    onPrimaryContainer = Color(0xFFEADDFF),
+
+    secondary      = Color(0xFF3E3E6E),
+    onSecondary    = Color(0xFFFFFFFF),
+    secondaryContainer   = Color(0xFF00504D),
+    onSecondaryContainer = Color(0xE197E1EC),
+
     background     = Color(0xFF1A1A40),
-    onBackground  = Color(0xFF1F1E1F),
-    surface        = Color(0xFF1C1B1F),
-    onSurface      = Color(0xFFE6E1E5),
-    // …other roles
+    onBackground   = Color.White,
+    surface        = Color(0xFF121212),
+    onSurface      = Color.White,
+    surfaceVariant = Color(0x37757575),
+
+
+    error          = Color(0xFFCF6679),
+    onError        = Color.Black,
+    errorContainer    = Color(0xFF93000A),
+    onErrorContainer  = Color(0xFFFFDAD4)
 )
+
 
 val AppShapes: MaterialShapes = MaterialShapes(
     small  = RoundedCornerShape(8.dp),
@@ -77,7 +79,8 @@ val AppTypography: Typography = Typography(
     displayLarge  = TextStyle(fontSize = 57.sp, fontWeight = FontWeight.Bold),
     headlineSmall = TextStyle(fontSize = 24.sp),
     bodyMedium    = TextStyle(fontSize = 16.sp),
-    labelSmall    = TextStyle(fontSize = 11.sp)
+    labelSmall    = TextStyle(fontSize = 11.sp),
+    labelLarge    = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
     // …etc.
 )
 
@@ -85,7 +88,7 @@ val AppTypography: Typography = Typography(
 fun CapstoneTheme(
 
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -109,7 +112,7 @@ fun CapstoneTheme(
 fun CapstoneTesting(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

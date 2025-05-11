@@ -55,7 +55,12 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
                     val doorLock = doc.getBoolean("doorLock")
                     // val gas = doc.getBoolean("gas")
                     val motion = doc.getBoolean("motion")
-                    val temperature = doc.getLong("temperature")?.toInt()
+
+                    val triggeredMap = doc.get("triggered") as? Map<*, *>
+                    val temperature = triggeredMap?.get("temperature") as? Boolean ?: false
+                    Log.d("AlertsScreen", "Temperature: $temperature")
+
+                   // val temperature = doc.getLong("temperature")?.toInt()
                     val timestamp = doc.getDate("timestamp")
 
 
@@ -80,7 +85,7 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
             ExtendedFloatingActionButton(
                 onClick = {
                     // Firestore'dan tüm alert'leri sil
-                    firestore.collection("Test")
+                    firestore.collection("sensorAlerts")
                         .get()
                         .addOnSuccessListener { snapshot ->
                             snapshot.documents.forEach { it.reference.delete() }
@@ -88,7 +93,7 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
                         }
                 },
                 modifier = Modifier
-                    .padding(end = 32.dp, bottom = 72.dp) // Profile butonun biraz üstüne gelsin
+                    .padding(end = 6.dp, bottom = 90.dp) // Profile butonun biraz üstüne gelsin
 
             ) {
                 Text(
@@ -112,7 +117,7 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
                         .wrapContentHeight()//.height(120.dp)
                         .padding(16.dp),
                     shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+//                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -133,7 +138,7 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
 
                         if (alert.gas == true) {
                             Text(
-                                text = "Sensors detected a gas leak in the house!! ",
+                                text = "-Sensors detected a gas leak in the house!! Be careful. ",
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 16.sp
                             )
@@ -142,21 +147,21 @@ fun AlertsScreen(paddingValues: PaddingValues, navController: NavController) {
 
                         if (alert.motion == true) {
                             Text(
-                                text = "Sensors detected unauthorized movement in the house!! ",
+                                text = "-Sensors detected unauthorized movement in the house!! ",
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 16.sp
                             )
                         }
                         if (alert.doorLock == true) {
                             Text(
-                                text = "The door was unlocked. ",
+                                text = "-The door was unlocked. ",
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 16.sp
                             )
                         }
-                        if (alert.temperature != 0) {
+                        if (alert.temperature == true) {
                             Text(
-                                text = "The temperature in the house has risen above standard!! ",
+                                text = "-The temperature in the house has risen above standard!! ",
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 16.sp
                             )
