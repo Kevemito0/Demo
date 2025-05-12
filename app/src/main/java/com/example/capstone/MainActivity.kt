@@ -39,7 +39,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -100,7 +103,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            CapstoneTheme (dynamicColor = false) {
+            CapstoneTheme(dynamicColor = false) {
                 val startDestination = if (auth.currentUser != null) "main" else "auth"
                 NavHost(navController = navController, startDestination = startDestination) {
                     composable("auth") {
@@ -113,13 +116,13 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     override fun onDestroy() {
         super.onDestroy()
         auth.removeAuthStateListener(authStateListener)
     }
 
 }
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -150,12 +153,31 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
         mutableStateOf(0)
     }
 
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val userId = currentUser?.uid
+    val firestore = Firebase.firestore
+
+    var Username by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
+            userId?.let {
+                firestore.collection("UsersTest")
+                    .document(it).get()
+                    .addOnSuccessListener { document ->
+                        Username = document.getString("User Name")
+                    }
+            }
+
 
             TopAppBar(title = {
-                Text(text = "HOMSEC")
+                Text(
+                    text = "Welcome $Username",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+
             },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -237,9 +259,11 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
                     AlertsScreen(paddingValues, navController)
                 }
                 composable("settings") {
-                    SettingsScreen(paddingValues,
+                    SettingsScreen(
+                        paddingValues,
                         navController,
-                        outerNavController)
+                        outerNavController
+                    )
 //                    Kerem(paddingValues) // Settings sayfası
                 }
                 composable("profile") {
@@ -259,7 +283,7 @@ fun TopAndBottomBars(outerNavController: NavHostController) {
 }
 
 
-fun addData(){
+fun addData() {
     val db = Firebase.firestore
 
     val user = hashMapOf(

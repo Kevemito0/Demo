@@ -54,6 +54,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
     val firestore = Firebase.firestore
 
     var familyId by remember { mutableStateOf<String?>(null) }
+    var inFamily by remember { mutableStateOf(false) }
     var rooms by remember { mutableStateOf<List<RoomItem>>(emptyList()) }
     val komutRef = FirebaseDatabase.getInstance().getReference("komut")
 
@@ -66,6 +67,7 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                 .get()
                 .addOnSuccessListener { document ->
                     familyId = document.getString("familyId")
+                    inFamily = document.getBoolean("inFamily") == true
                     Log.d("RoomScreen", "FamilyID: $familyId")
 
                     familyId?.let { fid ->
@@ -97,32 +99,33 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
             .padding(paddingValues)
     )
     {
-        items(rooms) { room ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .padding(16.dp)
-                    .clickable {
-                        navController.navigate("device/${room.name}")
-                    },
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Column(
+        if (inFamily) {
+            items(rooms) { room ->
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .padding(16.dp)
+                        .clickable {
+                            navController.navigate("device/${room.name}")
+                        },
+                    shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text(
-                        text = room.name,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = 24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            text = room.name,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
-        }
 
         val buttons = listOf("Open the Door", "Close Alarm", "Open Gas Valve", "Close Gas Valve")
 
@@ -295,8 +298,8 @@ fun RoomScreen(navController: NavController, paddingValues: PaddingValues) {
                 }
             }
         }*/
+            }
         }
-
     }
 }
 

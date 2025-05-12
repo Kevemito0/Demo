@@ -349,6 +349,10 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                                 firestore.collection("invites").document(inviteId)
                                     .update("isUsed", true)
 
+                                firestore.collection("UsersTest")
+                                    .document(userId)
+                                    .update("inFamily", true)
+
                                 Toast.makeText(context, "Joined successfully!", Toast.LENGTH_SHORT)
                                     .show()
                                 isLoading = false
@@ -538,18 +542,22 @@ fun FamilyMemberListScreen(navController: NavHostController) {
     Text("Family Members (${memberList.size})", style = MaterialTheme.typography.titleLarge)
     Spacer(Modifier.height(8.dp))
 
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyColumn(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(memberList, key = { it.id }) { member ->
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .padding(),
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("${member.name} (${member.role})", fontWeight = FontWeight.Bold)
+                        Text("  ${member.name} (${member.role})", fontWeight = FontWeight.Bold)
                         if (isOwner && member.role != "admin") {
                             IconButton(onClick = {
                                 firestore.collection("Families")
@@ -559,22 +567,33 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                                     .delete()
                                     .addOnSuccessListener {
                                         memberList.remove(member)
+                                        firestore.collection("UsersTest")
+                                            .document(member.id)
+                                            .update("inFamily", false)
                                         Toast.makeText(
                                             context,
                                             "${member.name} silindi",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
 
+                                            Toast.LENGTH_SHORT,
+
+                                            ).show()
 
 
                                         member.id.let { userId ->
                                             firestore.collection("UsersTest").document(userId)
                                                 .update("familyId", randomFamilyId)
                                                 .addOnSuccessListener {
-                                                    Log.d("UpdateFamilyId", "familyId başarıyla güncellendi")
+                                                    Log.d(
+                                                        "UpdateFamilyId",
+                                                        "familyId başarıyla güncellendi"
+                                                    )
                                                 }
                                                 .addOnFailureListener { e ->
-                                                    Log.e("UpdateFamilyId", "familyId güncellenirken hata oluştu", e)
+                                                    Log.e(
+                                                        "UpdateFamilyId",
+                                                        "familyId güncellenirken hata oluştu",
+                                                        e
+                                                    )
                                                 }
                                         }
 
@@ -585,9 +604,10 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                             }
                         }
                     }
-//                        Text(member.email)
+
+
                     Text(
-                        "Join Time: ${member.joinDate}",
+                        "  Join Time: ${member.joinDate}",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
