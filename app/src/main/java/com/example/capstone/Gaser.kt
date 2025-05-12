@@ -1,5 +1,6 @@
 package com.example.capstone
 
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -336,63 +337,35 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                     .get()
                     .addOnSuccessListener { result ->
                         if (result.isEmpty) {
-                            Toast.makeText(
-                                context,
-                                "Code is invalid or already used",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(context, "Code is invalid or already used", Toast.LENGTH_SHORT).show()
                             isLoading = false
                             return@addOnSuccessListener
                         }
 
                         val inviteDoc = result.documents[0]
-                        val newFamilyId =
-                            inviteDoc.getString("familyId") ?: return@addOnSuccessListener
+                        val newFamilyId = inviteDoc.getString("familyId") ?: return@addOnSuccessListener
                         val inviteId = inviteDoc.id
 
-                        // Kullanıcıyı UsersTest'ten çek
-                        val userId = FirebaseAuth.getInstance().currentUser?.uid
-                            ?: return@addOnSuccessListener
-                        firestore.collection("UsersTest")
-                            .document(userId)
+                        firestore.collection("UsersTest").document(userId)
                             .get()
                             .addOnSuccessListener { userDoc ->
                                 val userEmail = userDoc.getString("E-Mail") ?: ""
                                 val userName = userDoc.getString("User Name") ?: ""
+                                val currentFamily = userDoc.getString("familyId")
 
-                                // 1. Kullanıcının familyId'sini güncelle
-                                firestore.collection("UsersTest").document(userId)
-                                    .update("familyId", newFamilyId)
-//                                firestore.collection("UsersTest").document(userId)
-//                                    .update("inFamily",true)
-
-
-                                // 2. Families → {familyId} → members → {userId}
-                                val currentTime = Date()
-                                val memberInfo = mapOf(
-                                    "email" to userEmail,
-                                    "name" to userName,
-                                    "joinedAt" to currentTime,
-                                    "role" to "Member",
-                                    "userId" to userId
-                                )
-                                firestore.collection("Families")
-                                    .document(newFamilyId)
-                                    .collection("members")
-                                    .document(userId)
-                                    .set(memberInfo)
-
-                                // 3. invite isUsed = true
-                                firestore.collection("invites").document(inviteId)
-                                    .update("isUsed", true)
-
-                                firestore.collection("UsersTest")
-                                    .document(userId)
-                                    .update("inFamily", true)
-
-                                Toast.makeText(context, "Joined successfully!", Toast.LENGTH_SHORT)
-                                    .show()
-                                isLoading = false
+                                if (currentFamily != null && currentFamily != newFamilyId) {
+                                    // Kullanıcı zaten başka bir ailede, onay al
+                                    oldFamilyId = currentFamily
+                                    pendingFamilyId = newFamilyId
+                                    oldFamilyName = currentFamily // (Opsiyonel: familyName almak istersen çekebilirsin)
+                                    showConfirmDialog = true
+                                    isLoading = false
+                                } else {
+                                    // İlk kez katılıyor ya da aynı aileye
+                                    joinFamily(userId, newFamilyId, inviteId, userName, userEmail, context) {
+                                        isLoading = false
+                                    }
+                                }
                             }
                     }
                     .addOnFailureListener {
@@ -407,40 +380,52 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                 contentColor = MaterialTheme.colorScheme.onSecondary
             )
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .padding(end = 8.dp)
-                )
-            }
+            if (isLoading) CircularProgressIndicator(Modifier.size(20.dp).padding(end = 8.dp))
             Text("Join")
         }
 
-    }
+// 🔽 AlertDialog mantıklı hale getirildi:
+        if (showConfirmDialog && pendingFamilyId != null && oldFamilyId != null) {
+            AlertDialog(
+                onDismissRequest = { showConfirmDialog = false },
+                title = { Text("Family Change") },
+                text = { Text("You are already in a family. Do you want to leave and join the new family?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showConfirmDialog = false
+                        val memberRef = firestore.collection("Families")
+                            .document(oldFamilyId!!)
+                            .collection("members")
+                            .document(userId)
 
-    if (showConfirmDialog && pendingFamilyId != null) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Family Change") },
-            text = { Text("You are already in **${oldFamilyName}** . Are you sure you want to leave this family and join the new one?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showConfirmDialog = false
-                    // Eski aileden sil ve yeni aileye katıl
-                    firestore.collection("Families").document(oldFamilyId!!)
-                        .collection("members").document(userId).delete()
-                        .addOnSuccessListener {
-                            joinFamily(userId, pendingFamilyId!!, inputCode, context) {
-                                isLoading = false
-                            }
+                        memberRef.delete().addOnSuccessListener {
+                            // Eski ailede kimse kalmadıysa aileyi tamamen sil (opsiyonel)
+                            firestore.collection("Families").document(oldFamilyId!!)
+                                .collection("members")
+                                .get()
+                                .addOnSuccessListener { snapshot ->
+                                    if (snapshot.isEmpty) {
+                                        firestore.collection("Families").document(oldFamilyId!!).delete()
+                                    }
+                                }
+
+                            firestore.collection("UsersTest").document(userId)
+                                .get()
+                                .addOnSuccessListener { doc ->
+                                    val name = doc.getString("User Name").orEmpty()
+                                    val email = doc.getString("E-Mail").orEmpty()
+                                    joinFamily(userId, pendingFamilyId!!, inputCode, name, email, context) {
+                                        isLoading = false
+                                    }
+                                }
                         }
-                }) { Text("Yes,continue") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") }
-            }
-        )
+                    }) { Text("Yes, continue") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") }
+                }
+            )
+        }
     }
 }
 
@@ -448,57 +433,40 @@ private fun joinFamily(
     userId: String,
     familyId: String,
     inviteDocId: String,
-    context: android.content.Context,
+    name: String,
+    email: String,
+    context: Context,
     onComplete: () -> Unit
 ) {
     val firestore = Firebase.firestore
+    val currentTime = Date()
 
-    // UsersTest'ten name ve email al
+    val memberInfo = mapOf(
+        "userId" to userId,
+        "name" to name,
+        "email" to email,
+        "joinedAt" to currentTime,
+        "role" to "Member"
+    )
+
     firestore.collection("UsersTest").document(userId)
-        .get()
-        .addOnSuccessListener { userDoc ->
-            val name = userDoc.getString("User Name").orEmpty()
-            val email = userDoc.getString("E-Mail").orEmpty()
+        .update("familyId", familyId, "inFamily", true)
+        .addOnSuccessListener {
+            firestore.collection("Families").document(familyId)
+                .collection("members").document(userId)
+                .set(memberInfo)
 
-            // UsersTest'teki familyId güncelle
-            firestore.collection("UsersTest").document(userId)
-                .update("familyId", familyId)
-                .addOnSuccessListener {
-                    // Yeni üye verilerini hazırla
-                    val memberData = hashMapOf(
-                        "userId" to userId,
-                        "name" to name,
-                        "email" to email,
-                        "joinedAt" to FieldValue.serverTimestamp(),
-                        "role" to "member"
-                    )
-                    // Yeni aileye ekle
-                    firestore.collection("Families").document(familyId)
-                        .collection("members").document(userId)
-                        .set(memberData)
+            firestore.collection("invites").document(inviteDocId)
+                .update("isUsed", true)
 
-                    // Davet kodunu işaretle
-                    firestore.collection("invites").document(inviteDocId)
-                        .update("isUsed", true)
-
-                    Toast.makeText(
-                        context,
-                        "You have successfully joined the family!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(context, "Error while joining: ${e.message}", Toast.LENGTH_SHORT)
-                        .show()
-                }
-                .addOnCompleteListener { onComplete() }
+            Toast.makeText(context, "Joined successfully!", Toast.LENGTH_SHORT).show()
         }
-        .addOnFailureListener { e ->
-            Toast.makeText(context, "Kullanıcı verisi okunamadı: ${e.message}", Toast.LENGTH_SHORT)
-                .show()
-            onComplete()
+        .addOnFailureListener {
+            Toast.makeText(context, "Join failed: ${it.message}", Toast.LENGTH_SHORT).show()
         }
+        .addOnCompleteListener { onComplete() }
 }
+
 
 @Composable
 fun FamilyMemberListScreen(navController: NavHostController) {
