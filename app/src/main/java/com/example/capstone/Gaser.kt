@@ -263,6 +263,7 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
     val firestore = Firebase.firestore
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
+
     var inputCode by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -380,6 +381,10 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
 
     }
 
+
+
+    var familyId by remember { mutableStateOf<String?>(null) }
+
     if (showConfirmDialog && pendingFamilyId != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
@@ -387,6 +392,10 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
             text = { Text("You are already in **${oldFamilyName}** . Are you sure you want to leave this family and join the new one?") },
             confirmButton = {
                 TextButton(onClick = {
+
+                    firestore.collection("UsersTest").document(userId)
+                        .get()
+                        .addOnSuccessListener { doc -> oldFamilyId = doc.getString("familyId") }
                     showConfirmDialog = false
                     // Eski aileden sil ve yeni aileye katıl
                     firestore.collection("Families").document(oldFamilyId!!)
