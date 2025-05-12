@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Person
@@ -50,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -120,21 +122,31 @@ fun Gaser(paddingValues: PaddingValues, navController: NavHostController) {
             when (selectedTabIndex) {
                 0 -> FamilyMemberListScreen(navController)
                 1 -> JoinWithInviteCodeScreen(navController)
-                2 -> InviteGenerationScreen()
+                2 -> InviteGenerationScreen(navController)
             }
         }
     }
 }
 
 @Composable
-fun InviteGenerationScreen() {
+fun InviteGenerationScreen(navController: NavHostController) {
     val context = LocalContext.current
     val firestore = Firebase.firestore
     val currentUser = FirebaseAuth.getInstance().currentUser
 
     var inviteCode by remember { mutableStateOf<String?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
+    var inFamily by remember { mutableStateOf(false) }
 
+    // Firestore'dan inFamily çek
+    LaunchedEffect(currentUser) {
+        currentUser?.uid?.let { uid ->
+            firestore.collection("UsersTest").document(uid)
+                .addSnapshotListener { snapshot, _ ->
+                    inFamily = snapshot?.getBoolean("inFamily") == true
+                }
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -143,6 +155,10 @@ fun InviteGenerationScreen() {
     ) {
         Button(
             onClick = {
+                if (!inFamily) {
+                    Toast.makeText(context, "First create a family", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
                 if (currentUser == null) {
                     Toast.makeText(context, "Giriş yapılmamış!", Toast.LENGTH_SHORT).show()
                 } else {
@@ -236,6 +252,7 @@ fun InviteGenerationScreen() {
                 }
             }
         }
+
     }
 }
 
@@ -480,6 +497,7 @@ fun FamilyMemberListScreen(navController: NavHostController) {
     var familyName by remember { mutableStateOf("") }
     var isOwner by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var inFamily by remember { mutableStateOf(false) }
 
     val memberList = remember { mutableStateListOf<FamilyMember>() }
 
@@ -487,144 +505,149 @@ fun FamilyMemberListScreen(navController: NavHostController) {
         currentUser?.uid?.let { userId ->
             firestore.collection("UsersTest").document(userId)
                 .addSnapshotListener { userDoc, _ ->
-                    userDoc?.getString("familyId")?.let { fid ->
-                        familyId = fid
-                        // listen family doc
-                        firestore.collection("Families").document(fid)
-                            .addSnapshotListener { famDoc, _ ->
-                                famDoc?.let { doc ->
-                                    familyName = doc.getString("familyName").orEmpty()
-                                    isOwner = doc.getString("ownerId") == userId
+                    userDoc?.let {
+                        inFamily = it.getBoolean("inFamily") == true
+                        it.getString("familyId")?.let { fid ->
+                            familyId = fid
+                            firestore.collection("Families").document(fid)
+                                .addSnapshotListener { famDoc, _ ->
+                                    famDoc?.let { doc ->
+                                        familyName = doc.getString("familyName").orEmpty()
+                                        isOwner = doc.getString("ownerId") == userId
+                                    }
                                 }
-                            }
-                        // listen members
-                        firestore.collection("Families").document(fid)
-                            .collection("members")
-                            .addSnapshotListener { snap, _ ->
-                                memberList.clear()
-                                snap?.documents?.forEach { d ->
-                                    memberList.add(
-                                        FamilyMember(
-                                            id = d.getString("userId").orEmpty(),
-                                            name = d.getString("name").orEmpty(),
-                                            email = d.getString("email").orEmpty(),
-                                            joinDate = d.getTimestamp("joinedAt")?.toDate()
-                                                .toString(),
-                                            role = d.getString("role").orEmpty()
+                            firestore.collection("Families").document(fid)
+                                .collection("members")
+                                .addSnapshotListener { snap, _ ->
+                                    memberList.clear()
+                                    snap?.documents?.forEach { d ->
+                                        memberList.add(
+                                            FamilyMember(
+                                                id = d.getString("userId").orEmpty(),
+                                                name = d.getString("name").orEmpty(),
+                                                email = d.getString("email").orEmpty(),
+                                                joinDate = d.getTimestamp("joinedAt")?.toDate().toString(),
+                                                role = d.getString("role").orEmpty()
+                                            )
                                         )
-                                    )
+                                    }
                                 }
-                            }
+                        }
                     }
                 }
         }
     }
 
-    Spacer(Modifier.height(16.dp))
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Spacer(Modifier.height(16.dp))
 
-    FamilyNameCard(
-        familyName = familyName,
-        isOwner = isOwner,
-        onEditClick = { showEditDialog = true }
-    )
-
-    if (showEditDialog && isOwner) {
-        EditFamilyNameDialog(
-            currentName = familyName,
-            onConfirm = { updated ->
-                firestore.collection("Families").document(familyId)
-                    .update("familyName", updated)
-                    .addOnSuccessListener {
-                        Toast.makeText(context, "Family name updated!", Toast.LENGTH_SHORT).show()
-                    }
-                showEditDialog = false
-            },
-            onDismiss = { showEditDialog = false }
+        FamilyNameCard(
+            familyName = familyName,
+            isOwner = isOwner,
+            onEditClick = { showEditDialog = true }
         )
-    }
 
-    Spacer(Modifier.height(24.dp))
-    Text("Family Members (${memberList.size})", style = MaterialTheme.typography.titleLarge)
-    Spacer(Modifier.height(8.dp))
+        if (showEditDialog && isOwner) {
+            EditFamilyNameDialog(
+                currentName = familyName,
+                onConfirm = { updated ->
+                    firestore.collection("Families").document(familyId)
+                        .update("familyName", updated)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Family name updated!", Toast.LENGTH_SHORT).show()
+                        }
+                    showEditDialog = false
+                },
+                onDismiss = { showEditDialog = false }
+            )
+        }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(memberList, key = { it.id }) { member ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(),
-            ) {
-                Column(modifier = Modifier.padding(4.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("  ${member.name} (${member.role})", fontWeight = FontWeight.Bold)
-                        if (isOwner && member.role != "admin" && member.id != currentUser?.uid) {
-                            IconButton(onClick = {
-                                firestore.collection("Families")
-                                    .document(familyId)
-                                    .collection("members")
-                                    .document(member.id)
-                                    .delete()
-                                    .addOnSuccessListener {
-                                        memberList.remove(member)
-                                        firestore.collection("UsersTest")
-                                            .document(member.id)
-                                            .update("inFamily", false)
-                                        Toast.makeText(
-                                            context,
-                                            "${member.name} silindi",
+        Spacer(Modifier.height(24.dp))
+        Text("Family Members (${memberList.size})", style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(8.dp))
 
-                                            Toast.LENGTH_SHORT,
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(memberList, key = { it.id }) { member ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("  ${member.name} (${member.role})", fontWeight = FontWeight.Bold)
+                            if (isOwner && member.role != "admin" && member.id != currentUser?.uid) {
+                                IconButton(onClick = {
+                                    firestore.collection("Families")
+                                        .document(familyId)
+                                        .collection("members")
+                                        .document(member.id)
+                                        .delete()
+                                        .addOnSuccessListener {
+                                            memberList.remove(member)
+                                            firestore.collection("UsersTest")
+                                                .document(member.id)
+                                                .update("inFamily", false)
+                                            Toast.makeText(context, "${member.name} silindi", Toast.LENGTH_SHORT).show()
 
-                                            ).show()
-
-
-                                        member.id.let { userId ->
-                                            firestore.collection("UsersTest").document(userId)
+                                            firestore.collection("UsersTest").document(member.id)
                                                 .update("familyId", randomFamilyId)
-                                                .addOnSuccessListener {
-                                                    Log.d(
-                                                        "UpdateFamilyId",
-                                                        "familyId başarıyla güncellendi"
-                                                    )
-                                                }
-                                                .addOnFailureListener { e ->
-                                                    Log.e(
-                                                        "UpdateFamilyId",
-                                                        "familyId güncellenirken hata oluştu",
-                                                        e
-                                                    )
-                                                }
                                         }
-
-
-                                    }
-                            }) {
-//                                if (member.id != currentUser?.uid) {
+                                }) {
                                     Icon(Icons.Default.Delete, contentDescription = "Delete")
-//                                }
-//                                else{
-//                                    Icon(Icons.Default.Done, contentDescription = "Done")
-//                                }
-
+                                }
                             }
                         }
+                        Text("  Join Time: ${member.joinDate}", style = MaterialTheme.typography.bodySmall)
                     }
-
-
-                    Text(
-                        "  Join Time: ${member.joinDate}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
                 }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 👇 Leave Family Butonu
+        if (inFamily) {
+            var showDialog by remember { mutableStateOf(false) }
+
+            Button(
+                onClick = { showDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red,
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Leave Family")
+            }
+
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDialog = false },
+                    title = { Text("Leave Family") },
+                    text = { Text("Are you sure you want to leave your family? This action cannot be undone.") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showDialog = false
+                            currentUser?.uid?.let { uid ->
+                                leaveFamily(uid, context) {
+                                    navController.navigate("main") {
+                                        popUpTo("main") { inclusive = true }
+                                    }
+                                }
+                            }
+                        }) {
+                            Text("Yes, Leave")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
         }
     }
@@ -705,6 +728,121 @@ fun EditFamilyNameDialog(
         }
     )
 }
+
+//@Composable
+//fun LeaveFamilyButtonWithDialog(
+//    context: Context,
+//    navController: NavHostController
+//) {
+//    val firestore = Firebase.firestore
+//    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+//    var showDialog by remember { mutableStateOf(false) }
+//    var inFamily by remember { mutableStateOf(false) }
+//
+//    // Kullanıcının inFamily bilgisi Firestore'dan alınır
+//    LaunchedEffect(userId) {
+//        firestore.collection("UsersTest").document(userId)
+//            .addSnapshotListener { snapshot, _ ->
+//                inFamily = snapshot?.getBoolean("inFamily") == true
+//            }
+//    }
+//    if(inFamily){
+//    Button(
+//        onClick = { showDialog = true },
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(16.dp),
+//        colors = ButtonDefaults.buttonColors(
+//            containerColor = Color.Red,
+//            contentColor = Color.White
+//        )
+//    ) {
+//        Icon(Icons.Default.ExitToApp, contentDescription = null)
+//        Spacer(Modifier.width(8.dp))
+//        Text("Leave Family")
+//    }
+//
+//    if (showDialog) {
+//        AlertDialog(
+//            onDismissRequest = { showDialog = false },
+//            title = { Text("Leave Family") },
+//            text = { Text("Are you sure you want to leave your family? This action cannot be undone.") },
+//            confirmButton = {
+//                TextButton(
+//                    onClick = {
+//                        showDialog = false
+//                        leaveFamily(userId, context) {
+//                            // 👇 Ana ekrana dön
+//                            navController.navigate("main") {
+//                                popUpTo("main") { inclusive = true }
+//                            }
+//                        }
+//                    }
+//                ) {
+//                    Text("Yes, Leave")
+//                }
+//            },
+//            dismissButton = {
+//                TextButton(onClick = { showDialog = false }) {
+//                    Text("Cancel")
+//                }
+//            }
+//        )
+//    }
+//}}
+fun leaveFamily(
+    userId: String,
+    context: Context,
+    onComplete: () -> Unit = {}
+) {
+    val firestore = Firebase.firestore
+    val newRandomFamilyId = firestore.collection("Families").document().id
+
+    firestore.collection("UsersTest").document(userId)
+        .get()
+        .addOnSuccessListener { userDoc ->
+            val familyId = userDoc.getString("familyId")
+            if (familyId.isNullOrEmpty()) {
+                Toast.makeText(context, "No family found", Toast.LENGTH_SHORT).show()
+                onComplete()
+                return@addOnSuccessListener
+            }
+
+            firestore.collection("UsersTest").document(userId)
+                .update(mapOf("familyId" to newRandomFamilyId, "inFamily" to false))
+                .addOnSuccessListener {
+                    firestore.collection("Families").document(familyId)
+                        .collection("members").document(userId)
+                        .delete()
+                        .addOnSuccessListener {
+                            firestore.collection("Families").document(familyId)
+                                .collection("members").get()
+                                .addOnSuccessListener { snapshot ->
+                                    if (snapshot.isEmpty) {
+                                        firestore.collection("Families").document(familyId).delete()
+                                    }
+                                }
+                            Toast.makeText(context, "You left the family", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Couldn't remove from family: ${it.message}", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnCompleteListener { onComplete() }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(context, "Couldn't update user: ${it.message}", Toast.LENGTH_SHORT).show()
+                    onComplete()
+                }
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Couldn't load user data: ${it.message}", Toast.LENGTH_SHORT).show()
+            onComplete()
+        }
+}
+
+
+
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
