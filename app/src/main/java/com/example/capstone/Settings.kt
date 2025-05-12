@@ -76,7 +76,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .padding(paddingValues)
             .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.SpaceBetween,
+        verticalArrangement = Arrangement.Top,
     ) {
         Column {
             Text(
@@ -283,10 +283,10 @@ fun SettingsScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 15.dp, bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError
+                    containerColor = Color(0xFF4CAF50),
+                    contentColor = Color(0xFF000000)
                 )
             ) {
                 Icon(Icons.Default.FamilyRestroom, contentDescription = null)
@@ -307,7 +307,7 @@ fun SettingsScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 215.dp, bottom = 16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error,
                 contentColor = MaterialTheme.colorScheme.onError
