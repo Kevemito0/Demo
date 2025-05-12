@@ -3,6 +3,7 @@ package com.example.capstone
 import android.content.res.Configuration
 import android.provider.ContactsContract.Profile
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,11 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 import java.util.Date
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+
+
+
 
 fun logoutUser(onLoggedOut: () -> Unit) {
     FirebaseAuth.getInstance().signOut()
@@ -59,6 +65,8 @@ fun logoutUser(onLoggedOut: () -> Unit) {
 fun SettingsScreen(
     paddingValues: PaddingValues, navController: NavController, outerNavController: NavController
 ) {
+    val context = LocalContext.current
+
     var notificationsEnabled by remember { mutableStateOf(true) }
     var ListItemColors = ListItemColors(
         containerColor = Color(0x00000000),
@@ -259,6 +267,8 @@ fun SettingsScreen(
                                             "role" to "Admin",
                                             "userId" to userIdFromDoc
                                         )
+
+                                        Toast.makeText(context, "You created a family", Toast.LENGTH_SHORT).show()
 
                                         firestore.collection("UsersTest").document(userId)
                                             .update("inFamily", true)
