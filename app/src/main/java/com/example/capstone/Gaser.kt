@@ -323,12 +323,16 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
     var pendingFamilyId by remember { mutableStateOf<String?>(null) }
     var oldFamilyId by remember { mutableStateOf<String?>(null) }
     var oldFamilyName by remember { mutableStateOf<String?>(null) }
+    var inFamily by remember { mutableStateOf(false) }
+    val currentUser = FirebaseAuth.getInstance().currentUser
+
 
     // Mevcut aile ID'sini al
     LaunchedEffect(userId) {
         firestore.collection("UsersTest").document(userId)
             .get()
-            .addOnSuccessListener { doc -> oldFamilyId = doc.getString("familyId") }
+            .addOnSuccessListener { doc -> oldFamilyId = doc.getString("familyId")
+                inFamily = doc.getBoolean("inFamily") == true}
     }
 
     Column(
@@ -370,7 +374,7 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
                                 val userName = userDoc.getString("User Name") ?: ""
                                 val currentFamily = userDoc.getString("familyId")
 
-                                if (currentFamily != null && currentFamily != newFamilyId) {
+                                if (currentFamily != null && currentFamily != newFamilyId && inFamily) {
                                     // Kullanıcı zaten başka bir ailede, onay al
                                     oldFamilyId = currentFamily
                                     pendingFamilyId = newFamilyId
@@ -402,7 +406,7 @@ fun JoinWithInviteCodeScreen(navController: NavHostController) {
         }
 
 // 🔽 AlertDialog mantıklı hale getirildi:
-        if (showConfirmDialog && pendingFamilyId != null && oldFamilyId != null) {
+        if (showConfirmDialog && pendingFamilyId != null && inFamily) {
             AlertDialog(
                 onDismissRequest = { showConfirmDialog = false },
                 title = { Text("Family Change") },
