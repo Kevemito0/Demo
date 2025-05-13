@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Person
@@ -608,6 +609,7 @@ fun FamilyMemberListScreen(navController: NavHostController) {
             }
         }
 
+
         Spacer(modifier = Modifier.height(24.dp))
 
         // 👇 Leave Family Butonu
@@ -652,6 +654,95 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                         }
                     }
                 )
+            }
+        }
+        else{
+            OutlinedTextField(
+                value = familyName,
+                onValueChange = { familyName = it },
+                label = { Text("Enter Your Family Name") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+            )
+
+            Button(
+                onClick = {
+                    val currentTime = Date()
+                    val newFamilyId = firestore.collection("Families").document().id
+                    val roomsMap = mapOf(
+                        "0" to "Kitchen",
+                        "1" to "Corridor",
+                        "2" to "Entrance"
+                    )
+
+                    currentUser?.uid?.let { uid ->
+                        firestore.collection("UsersTest").document(uid).get()
+                            .addOnSuccessListener { doc ->
+                                val name = doc.getString("User Name").orEmpty()
+                                val email = doc.getString("E-Mail").orEmpty()
+
+                                // 1️⃣ Rooms oluştur
+                                firestore.collection("Rooms").document(newFamilyId).set(roomsMap)
+
+                                // 2️⃣ Devices oluştur
+                                val roomDevicesMap = mapOf(
+                                    "Kitchen" to listOf("Gas Sensor"),
+                                    "Corridor" to listOf("Heat Sensor"),
+                                    "Entrance" to listOf("Motion Sensor")
+                                )
+                                roomDevicesMap.forEach { (roomName, devices) ->
+                                    val roomRef = firestore.collection("Rooms")
+                                        .document(newFamilyId).collection(roomName)
+                                    devices.forEach { device ->
+                                        roomRef.add(mapOf("Device" to device))
+                                    }
+                                }
+
+                                // 3️⃣ Families dokümanı oluştur
+                                firestore.collection("Families").document(newFamilyId).set(
+                                    mapOf(
+                                        "createdAt" to currentTime,
+                                        "familyName" to familyName,
+                                        "ownerId" to uid
+                                    )
+                                )
+
+                                // 4️⃣ Kullanıcıyı members içine ekle
+                                firestore.collection("Families").document(newFamilyId)
+                                    .collection("members").document(uid).set(
+                                        mapOf(
+                                            "email" to email,
+                                            "joinedAt" to currentTime,
+                                            "name" to name,
+                                            "role" to "Admin",
+                                            "userId" to uid
+                                        )
+                                    )
+
+                                // 5️⃣ Kullanıcı dokümanını güncelle
+                                firestore.collection("UsersTest").document(uid).update(
+                                    mapOf(
+                                        "familyId" to newFamilyId,
+                                        "inFamily" to true
+                                    )
+                                ).addOnSuccessListener {
+                                    Toast.makeText(context, "Family created successfully!", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50),
+                    contentColor = Color.Black
+                )
+            ) {
+                Icon(Icons.Default.FamilyRestroom, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Create Family", style = MaterialTheme.typography.titleMedium)
             }
         }
     }

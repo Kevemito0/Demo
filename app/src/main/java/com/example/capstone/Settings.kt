@@ -155,155 +155,155 @@ fun SettingsScreen(
         }
 
 
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val userId = currentUser?.uid
-        val firestore = Firebase.firestore
+//        val currentUser = FirebaseAuth.getInstance().currentUser
+//        val userId = currentUser?.uid
+//        val firestore = Firebase.firestore
 
-        var familyId by remember { mutableStateOf<String?>(null) }
-        var inFamily by remember { mutableStateOf(false) }
-
-        LaunchedEffect(Unit) {
-            userId?.let {
-                firestore.collection("UsersTest").document(it).get()
-                    .addOnSuccessListener { document ->
-                        familyId = document.getString("familyId")
-                        inFamily = document.getBoolean("inFamily") == true
-                        Log.d("RoomScreen", "FamilyID: $familyId")
-                    }
-            }
-        }
-
-
-        var familyName by remember { mutableStateOf("") }
-        if (!inFamily) {
-            OutlinedTextField(value = familyName,
-                onValueChange = { familyName = it },
-                label = { Text("Enter Your Family Name") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp)
-            )
-
-            Button(
-                onClick = {
-                    //Rooms Ekranını ayarlıyor
-                    familyId?.let { fid ->
-                        val roomsMap = mapOf(
-                            "0" to "Kitchen",
-                            "1" to "Corridor",
-                            "2" to "Entrance",
-                        )
-
-                        firestore.collection("Rooms").document(fid).set(roomsMap)
-                            .addOnSuccessListener {
-                                Log.d(
-                                    "SettingsScreen",
-                                    "Room document created successfully for familyId: $fid"
-                                )
-                            }.addOnFailureListener { e ->
-                                Log.e("SettingsScreen", "Error creating room document", e)
-                            }
-
-                        val roomsRef = firestore.collection("Rooms").document(fid)
-
-                        val roomDevicesMap = mapOf(
-                            "Kitchen" to listOf("Gas Sensor"),
-                            "Corridor" to listOf("Heat Sensor"),
-                            "Entrance" to listOf("Motion Sensor")
-                        )
-
-                        roomDevicesMap.forEach { (roomName, devices) ->
-                            val roomCollection = roomsRef.collection(roomName)
-
-                            devices.forEach { deviceName ->
-                                val deviceData = hashMapOf("Device" to deviceName)
-                                roomCollection.add(deviceData)
-                            }
-                        }
-
-
-                        //Families Ekranını Ayarlıyor
-                        val currentTime = Date()
-
-                        userId?.let { uid ->
-                            firestore.collection("UsersTest").document(uid).get()
-                                .addOnSuccessListener { document ->
-                                    val userIdFromDoc = document.getString("userId") ?: ""
-
-                                    val userInfo = mapOf(
-                                        "createdAt" to currentTime,
-                                        "familyName" to familyName,
-                                        "ownerId" to userIdFromDoc
-                                    )
-
-                                    firestore.collection("Families").document(fid).set(userInfo)
-                                        .addOnSuccessListener {
-                                            Log.d(
-                                                "SettingsScreen",
-                                                "Family document created successfully for familyId: $fid"
-                                            )
-                                        }.addOnFailureListener { e ->
-                                            Log.e(
-                                                "SettingsScreen",
-                                                "Error creating family document",
-                                                e
-                                            )
-                                        }
-
-
-                                }
-
-                            userId?.let { uid ->
-                                firestore.collection("UsersTest").document(uid).get()
-                                    .addOnSuccessListener { document ->
-                                        val email = document.getString("E-Mail") ?: ""
-                                        val name = document.getString("User Name") ?: ""
-                                        val userIdFromDoc = document.getString("userId") ?: ""
-
-                                        val membersInfos = mapOf(
-                                            "email" to email,
-                                            "joinedAt" to currentTime,
-                                            "name" to name,
-                                            "role" to "Admin",
-                                            "userId" to userIdFromDoc
-                                        )
-
-                                        Toast.makeText(context, "You created a family", Toast.LENGTH_SHORT).show()
-
-                                        firestore.collection("UsersTest").document(userId)
-                                            .update("inFamily", true)
-
-
-                                        firestore.collection("Families").document(fid)
-                                            .collection("members").document(uid).set(membersInfos)
-                                            .addOnSuccessListener {
-                                                Log.d(
-                                                    "Firestore",
-                                                    "Kullanıcı üyeler koleksiyonuna başarıyla eklendi."
-                                                )
-                                            }.addOnFailureListener { e ->
-                                                Log.e("Firestore", "Üye eklenirken hata oluştu", e)
-                                            }
-                                    }.addOnFailureListener { e ->
-                                        Log.e("UserInfo", "Kullanıcı bilgileri alınamadı", e)
-                                    }
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 15.dp, bottom = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50),
-                    contentColor = Color(0xFF000000)
-                )
-            ) {
-                Icon(Icons.Default.FamilyRestroom, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Create Family", style = MaterialTheme.typography.titleMedium)
-            }
-        }
+//        var familyId by remember { mutableStateOf<String?>(null) }
+//        var inFamily by remember { mutableStateOf(false) }
+//
+//        LaunchedEffect(Unit) {
+//            userId?.let {
+//                firestore.collection("UsersTest").document(it).get()
+//                    .addOnSuccessListener { document ->
+//                        familyId = document.getString("familyId")
+//                        inFamily = document.getBoolean("inFamily") == true
+//                        Log.d("RoomScreen", "FamilyID: $familyId")
+//                    }
+//            }
+//        }
+//
+//
+//        var familyName by remember { mutableStateOf("") }
+//        if (!inFamily) {
+//            OutlinedTextField(value = familyName,
+//                onValueChange = { familyName = it },
+//                label = { Text("Enter Your Family Name") },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp)
+//            )
+//
+//            Button(
+//                onClick = {
+//                    //Rooms Ekranını ayarlıyor
+//                    familyId?.let { fid ->
+//                        val roomsMap = mapOf(
+//                            "0" to "Kitchen",
+//                            "1" to "Corridor",
+//                            "2" to "Entrance",
+//                        )
+//
+//                        firestore.collection("Rooms").document(fid).set(roomsMap)
+//                            .addOnSuccessListener {
+//                                Log.d(
+//                                    "SettingsScreen",
+//                                    "Room document created successfully for familyId: $fid"
+//                                )
+//                            }.addOnFailureListener { e ->
+//                                Log.e("SettingsScreen", "Error creating room document", e)
+//                            }
+//
+//                        val roomsRef = firestore.collection("Rooms").document(fid)
+//
+//                        val roomDevicesMap = mapOf(
+//                            "Kitchen" to listOf("Gas Sensor"),
+//                            "Corridor" to listOf("Heat Sensor"),
+//                            "Entrance" to listOf("Motion Sensor")
+//                        )
+//
+//                        roomDevicesMap.forEach { (roomName, devices) ->
+//                            val roomCollection = roomsRef.collection(roomName)
+//
+//                            devices.forEach { deviceName ->
+//                                val deviceData = hashMapOf("Device" to deviceName)
+//                                roomCollection.add(deviceData)
+//                            }
+//                        }
+//
+//
+//                        //Families Ekranını Ayarlıyor
+//                        val currentTime = Date()
+//
+//                        userId?.let { uid ->
+//                            firestore.collection("UsersTest").document(uid).get()
+//                                .addOnSuccessListener { document ->
+//                                    val userIdFromDoc = document.getString("userId") ?: ""
+//
+//                                    val userInfo = mapOf(
+//                                        "createdAt" to currentTime,
+//                                        "familyName" to familyName,
+//                                        "ownerId" to userIdFromDoc
+//                                    )
+//
+//                                    firestore.collection("Families").document(fid).set(userInfo)
+//                                        .addOnSuccessListener {
+//                                            Log.d(
+//                                                "SettingsScreen",
+//                                                "Family document created successfully for familyId: $fid"
+//                                            )
+//                                        }.addOnFailureListener { e ->
+//                                            Log.e(
+//                                                "SettingsScreen",
+//                                                "Error creating family document",
+//                                                e
+//                                            )
+//                                        }
+//
+//
+//                                }
+//
+//                            userId?.let { uid ->
+//                                firestore.collection("UsersTest").document(uid).get()
+//                                    .addOnSuccessListener { document ->
+//                                        val email = document.getString("E-Mail") ?: ""
+//                                        val name = document.getString("User Name") ?: ""
+//                                        val userIdFromDoc = document.getString("userId") ?: ""
+//
+//                                        val membersInfos = mapOf(
+//                                            "email" to email,
+//                                            "joinedAt" to currentTime,
+//                                            "name" to name,
+//                                            "role" to "Admin",
+//                                            "userId" to userIdFromDoc
+//                                        )
+//
+//                                        Toast.makeText(context, "You created a family", Toast.LENGTH_SHORT).show()
+//
+//                                        firestore.collection("UsersTest").document(userId)
+//                                            .update("inFamily", true)
+//
+//
+//                                        firestore.collection("Families").document(fid)
+//                                            .collection("members").document(uid).set(membersInfos)
+//                                            .addOnSuccessListener {
+//                                                Log.d(
+//                                                    "Firestore",
+//                                                    "Kullanıcı üyeler koleksiyonuna başarıyla eklendi."
+//                                                )
+//                                            }.addOnFailureListener { e ->
+//                                                Log.e("Firestore", "Üye eklenirken hata oluştu", e)
+//                                            }
+//                                    }.addOnFailureListener { e ->
+//                                        Log.e("UserInfo", "Kullanıcı bilgileri alınamadı", e)
+//                                    }
+//                            }
+//                        }
+//                    }
+//                },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(start = 16.dp, end = 16.dp, top = 15.dp, bottom = 16.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color(0xFF4CAF50),
+//                    contentColor = Color(0xFF000000)
+//                )
+//            ) {
+//                Icon(Icons.Default.FamilyRestroom, contentDescription = null)
+//                Spacer(Modifier.width(8.dp))
+//                Text("Create Family", style = MaterialTheme.typography.titleMedium)
+//            }
+//        }
 
 
         // Logout button
