@@ -189,10 +189,9 @@ fun SettingsScreen(
                     //Rooms Ekranını ayarlıyor
                     familyId?.let { fid ->
                         val roomsMap = mapOf(
-                            "0" to "Bedroom",
-                            "1" to "Livingroom",
-                            "2" to "Balcony",
-                            "3" to "Diningroom"
+                            "0" to "Kitchen",
+                            "1" to "Corridor",
+                            "2" to "Entrance",
                         )
 
                         firestore.collection("Rooms").document(fid).set(roomsMap)
@@ -208,8 +207,9 @@ fun SettingsScreen(
                         val roomsRef = firestore.collection("Rooms").document(fid)
 
                         val roomDevicesMap = mapOf(
-                            "Bedroom" to listOf("Motion Sensor"),
-                            "Livingroom" to listOf("Gas Sensor", "Heat Sensor")
+                            "Kitchen" to listOf("Gas Sensor"),
+                            "Corridor" to listOf("Heat Sensor"),
+                            "Entrance" to listOf("Motion Sensor")
                         )
 
                         roomDevicesMap.forEach { (roomName, devices) ->
