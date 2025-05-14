@@ -244,7 +244,7 @@ fun InviteGenerationScreen(navController: NavHostController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Kod: $code", style = MaterialTheme.typography.titleMedium)
+                Text("Code: $code", style = MaterialTheme.typography.titleMedium)
                 IconButton(onClick = {
                     clipboard.setText(AnnotatedString(code))
                     Toast.makeText(context, "Code coppied", Toast.LENGTH_SHORT).show()
@@ -593,7 +593,7 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                                             firestore.collection("UsersTest")
                                                 .document(member.id)
                                                 .update("inFamily", false)
-                                            Toast.makeText(context, "${member.name} silindi", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "${member.name} Deleted", Toast.LENGTH_SHORT).show()
 
                                             firestore.collection("UsersTest").document(member.id)
                                                 .update("familyId", randomFamilyId)
@@ -792,16 +792,16 @@ fun EditFamilyNameDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Aile İsmini Düzenle") },
+        title = { Text("Edit Your Family Name") },
         text = {
             Column {
                 OutlinedTextField(
                     value = tempName,
                     onValueChange = {
                         tempName = it
-                        errorMsg = if (it.isBlank()) "İsim boş olamaz" else null
+                        errorMsg = if (it.isBlank()) "Name can not be empty" else null
                     },
-                    label = { Text("Yeni Aile İsmi") },
+                    label = { Text("New Family Name") },
                     singleLine = true,
                     isError = errorMsg != null,
                     modifier = Modifier.fillMaxWidth()
@@ -816,10 +816,10 @@ fun EditFamilyNameDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (tempName.isNotBlank()) onConfirm(tempName) }) { Text("Kaydet") }
+            TextButton(onClick = { if (tempName.isNotBlank()) onConfirm(tempName) }) { Text("Save") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("İptal") }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }
