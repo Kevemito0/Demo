@@ -115,7 +115,6 @@ fun DeviceScreen(paddingValues: PaddingValues, roomName: String, navController: 
                     .height(100.dp)
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
-//                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Row(
                     modifier = Modifier

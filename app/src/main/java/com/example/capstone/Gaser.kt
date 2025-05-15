@@ -682,10 +682,8 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                                 val name = doc.getString("User Name").orEmpty()
                                 val email = doc.getString("E-Mail").orEmpty()
 
-                                // 1️⃣ Rooms oluştur
                                 firestore.collection("Rooms").document(newFamilyId).set(roomsMap)
 
-                                // 2️⃣ Devices oluştur
                                 val roomDevicesMap = mapOf(
                                     "Kitchen" to listOf("Gas Sensor"),
                                     "Corridor" to listOf("Heat Sensor"),
@@ -699,7 +697,6 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                                     }
                                 }
 
-                                // 3️⃣ Families dokümanı oluştur
                                 firestore.collection("Families").document(newFamilyId).set(
                                     mapOf(
                                         "createdAt" to currentTime,
@@ -708,7 +705,6 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                                     )
                                 )
 
-                                // 4️⃣ Kullanıcıyı members içine ekle
                                 firestore.collection("Families").document(newFamilyId)
                                     .collection("members").document(uid).set(
                                         mapOf(
@@ -720,7 +716,6 @@ fun FamilyMemberListScreen(navController: NavHostController) {
                                         )
                                     )
 
-                                // 5️⃣ Kullanıcı dokümanını güncelle
                                 firestore.collection("UsersTest").document(uid).update(
                                     mapOf(
                                         "familyId" to newFamilyId,
