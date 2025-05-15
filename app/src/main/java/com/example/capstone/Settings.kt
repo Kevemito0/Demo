@@ -317,7 +317,7 @@ fun SettingsScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 215.dp, bottom = 16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 350.dp, bottom = 16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error,
                 contentColor = MaterialTheme.colorScheme.onError
